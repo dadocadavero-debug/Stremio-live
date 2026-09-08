@@ -32,6 +32,10 @@ const italianTeams = [
 const topEuropeanTeams = [
   "real madrid", "barcelona", "fc barcelona",
   "atletico madrid", "atlético madrid",
+  "athletic bilbao", "athletic club",
+  "villarreal",
+  "real betis", "betis",
+  "sevilla", "sevilla fc",
   "manchester city", "manchester united",
   "liverpool", "arsenal", "chelsea", "tottenham",
   "newcastle united",
