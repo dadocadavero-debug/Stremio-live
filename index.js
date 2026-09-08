@@ -121,24 +121,17 @@ function cleanMatchName(name = "") {
       .replace(/🔴/g, "")
   );
 
-  const aliases = [
-    ["inter milan", "inter"],
-    ["internazionale", "inter"],
-    ["fc barcelona", "barcelona"],
-    ["bayern munich", "bayern"],
-    ["bayern munchen", "bayern"],
-    ["paris saint germain", "psg"],
-    ["sporting lisbon", "sporting"],
-    ["sporting cp", "sporting"],
-    ["athletic club", "athletic bilbao"]
-  ];
+  n = n
+    .replace(/\binter milan\b/g, "inter")
+    .replace(/\binternazionale\b/g, "inter")
+    .replace(/\bbayern munich\b/g, "bayern")
+    .replace(/\bbayern munchen\b/g, "bayern")
+    .replace(/\bparis saint germain\b/g, "psg")
+    .replace(/\bsporting lisbon\b/g, "sporting")
+    .replace(/\bathletic club\b/g, "athletic bilbao");
 
-  for (const [alias, canonical] of aliases) {
-    n = n.replace(
-      new RegExp(`\\b${escapeRegex(alias)}\\b`, "g"),
-      canonical
-    );
-  }
+  return n.replace(/\s+/g, " ").trim();
+}
 
   return n.replace(/\s+/g, " ").trim();
 }
