@@ -346,6 +346,25 @@ app.get("/debug/highfly", async (req, res) => {
   }
 });
 
+app.get("/debug/final", async (req, res) => {
+  try {
+    const metas = await getCatalogs();
+
+    res.json({
+      count: metas.length,
+      metas: metas.map(meta => ({
+        id: meta.id,
+        name: meta.name,
+        description: meta.description
+      }))
+    });
+  } catch (e) {
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
