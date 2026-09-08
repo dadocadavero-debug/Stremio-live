@@ -153,9 +153,9 @@ async function getCatalogs() {
   const all = [];
 
   if (results[0].status === "fulfilled") {
-    for (const meta of results[0].value.metas || []) {
-      if (!wanted(meta.name)) continue;
-      if (!live(meta)) continue;
+  for (const meta of results[0].value.metas || []) {
+    if (!wanted(meta.name)) continue;
+    // if (!live(meta)) continue;
 
       all.push({
         ...meta,
@@ -169,7 +169,7 @@ async function getCatalogs() {
 
   if (results[1].status === "fulfilled") {
   for (const meta of results[1].value.metas || []) {
-    if (!wanted(meta.name)) continue;
+    // if (!wanted(meta.name)) continue;
 
     all.push({
       ...meta,
