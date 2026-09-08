@@ -321,6 +321,31 @@ app.get("/stream/tv/:id.json", async (req, res) => {
   res.json({ streams });
 });
 
+app.get("/debug/highfly", async (req, res) => {
+  try {
+    const data = await getJson(
+      `${HIGHFLY}/catalog/sport/sports_live.json`
+    );
+
+    const metas = (data.metas || []).map(meta => ({
+      id: meta.id,
+      name: meta.name,
+      description: meta.description
+    }));
+
+    res.json({
+      count: metas.length,
+      metas
+    });
+  } catch (e) {
+    console.error(e);
+
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
