@@ -312,5 +312,14 @@ app.get("/stream/tv/:id.json", async (req, res) => {
   });
 
   const results = await Promise.all(requests);
+  const streams = results.flat();
 
-  const
+  res.json({ streams });
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
