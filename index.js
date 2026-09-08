@@ -121,16 +121,51 @@ function cleanMatchName(name = "") {
       .replace(/🔴/g, "")
   );
 
-  n = n
-    .replace(/\binter milan\b/g, "inter")
-    .replace(/\binternazionale\b/g, "inter")
-    .replace(/\bbayern munich\b/g, "bayern")
-    .replace(/\bbayern munchen\b/g, "bayern")
-    .replace(/\bparis saint germain\b/g, "psg")
-    .replace(/\bsporting lisbon\b/g, "sporting")
-    .replace(/\bathletic club\b/g, "athletic bilbao");
+  const aliases = {
+    "inter milan": "inter",
+    "internazionale": "inter",
 
-  return n.replace(/\s+/g, " ").trim();
+    "fc barcelona": "barcelona",
+
+    "atletico madrid": "atletico madrid",
+    "athletic club": "athletic bilbao",
+
+    "bayern munich": "bayern",
+    "bayern munchen": "bayern",
+
+    "borussia dortmund": "dortmund",
+
+    "paris saint germain": "psg",
+
+    "sporting lisbon": "sporting",
+    "sporting cp": "sporting",
+
+    "manchester united": "man united",
+    "manchester city": "man city",
+
+    "newcastle united": "newcastle",
+
+    "sevilla fc": "sevilla",
+
+    "villarreal cf": "villarreal"
+  };
+
+  // Prima sostituisce gli alias più lunghi
+  const sortedAliases = Object.keys(aliases)
+    .sort((a, b) => b.length - a.length);
+
+  for (const alias of sortedAliases) {
+    const canonical = aliases[alias];
+
+    n = n.replace(
+      new RegExp(`(^| )${escapeRegex(alias)}(?= |$)`, "g"),
+      `$1${canonical}`
+    );
+  }
+
+  return n
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function getJson(url) {
