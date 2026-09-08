@@ -227,7 +227,7 @@ const manifest = {
     {
       type: "tv",
       id: "live_football",
-      name: "🔴 LIVE FOOTBALL ⚽"
+      name: "🔴 LIVE Football ⚽"
     }
   ],
   idPrefixes: ["live:"]
