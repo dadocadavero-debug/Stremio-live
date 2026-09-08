@@ -317,3 +317,6 @@ app.get("/stream/tv/:id.json", async (req, res) => {
   res.json({ streams });
 });
 
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
