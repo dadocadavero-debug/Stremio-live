@@ -240,7 +240,8 @@ async function getCatalogs() {
   const metas = [];
 
   for (const [key, items] of groups) {
-    const first = items[0];
+    const first =
+  items.find(item => item._source === "sv") || items[0];
 
     const sources = items.map(item => ({
       source: item._source,
