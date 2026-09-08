@@ -86,10 +86,12 @@ function unwanted(name = "") {
   );
 }
 
-function wanted(name = "") {
-  if (unwanted(name)) return false;
+function wanted(meta = {}) {
+  const text = `${meta.name || ""} ${meta.description || ""}`;
 
-  const n = normalize(name);
+  if (unwanted(text)) return false;
+
+  const n = normalize(text);
 
   return wantedTeams.some(team => {
     const t = normalize(team);
@@ -154,8 +156,8 @@ async function getCatalogs() {
 
   if (results[0].status === "fulfilled") {
   for (const meta of results[0].value.metas || []) {
-    if (!wanted(meta.name)) continue;
-    // if (!live(meta)) continue;
+    if (!wanted(meta)) continue;
+// if (!live(meta)) continue;
 
       all.push({
         ...meta,
@@ -169,8 +171,7 @@ async function getCatalogs() {
 
   if (results[1].status === "fulfilled") {
   for (const meta of results[1].value.metas || []) {
-    // if (!wanted(meta.name)) continue;
-
+    if (!wanted(meta)) continue;
     all.push({
       ...meta,
       id: `hf:${meta.id}`,
