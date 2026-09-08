@@ -133,9 +133,6 @@ function cleanMatchName(name = "") {
   return n.replace(/\s+/g, " ").trim();
 }
 
-  return n.replace(/\s+/g, " ").trim();
-}
-
 async function getJson(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10000);
