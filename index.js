@@ -114,12 +114,33 @@ function live(meta) {
 }
 
 function cleanMatchName(name = "") {
-  return normalize(
+  let n = normalize(
     name
       .replace(/LIVE\s*NOW/gi, "")
       .replace(/\bLIVE\b/gi, "")
       .replace(/🔴/g, "")
   );
+
+  const aliases = [
+    ["inter milan", "inter"],
+    ["internazionale", "inter"],
+    ["fc barcelona", "barcelona"],
+    ["bayern munich", "bayern"],
+    ["bayern munchen", "bayern"],
+    ["paris saint germain", "psg"],
+    ["sporting lisbon", "sporting"],
+    ["sporting cp", "sporting"],
+    ["athletic club", "athletic bilbao"]
+  ];
+
+  for (const [alias, canonical] of aliases) {
+    n = n.replace(
+      new RegExp(`\\b${escapeRegex(alias)}\\b`, "g"),
+      canonical
+    );
+  }
+
+  return n.replace(/\s+/g, " ").trim();
 }
 
 async function getJson(url) {
