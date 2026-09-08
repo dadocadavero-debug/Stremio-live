@@ -79,7 +79,7 @@ function unwanted(name = "") {
   const title = name.toLowerCase();
 
   return (
-    /w|\bwomen\b|\bfemale\b|\bfemminile\b/i.test(title) ||
+    /\bw\b|\bwomen\b|\bfemale\b|\bfemminile\b/i.test(title) ||
     /\bu(?:15|16|17|18|19|20|21|22|23)\b/i.test(title) ||
     /\byouth\b|\bgiovanili\b|\bprimavera\b/i.test(title) ||
     /\breserves?\b|\bb team\b|\bteam b\b/i.test(title)
@@ -168,19 +168,18 @@ async function getCatalogs() {
   }
 
   if (results[1].status === "fulfilled") {
-    for (const meta of results[1].value.metas || []) {
-      if (!wanted(meta.name)) continue;
-      if (!live(meta)) continue;
+  for (const meta of results[1].value.metas || []) {
+    if (!wanted(meta.name)) continue;
 
-      all.push({
-        ...meta,
-        id: `hf:${meta.id}`,
-        type: "tv",
-        _source: "hf",
-        _originalId: meta.id
-      });
-    }
+    all.push({
+      ...meta,
+      id: `hf:${meta.id}`,
+      type: "tv",
+      _source: "hf",
+      _originalId: meta.id
+    });
   }
+}
 
   const groups = new Map();
 
