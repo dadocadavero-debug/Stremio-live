@@ -942,6 +942,44 @@ app.get(
   }
 );
 
+app.get("/debug/liverpool", async (req, res) => {
+  try {
+    const fixtures = await getApiFixtures();
+
+    const fixture = fixtures.find(f =>
+      f.home.toLowerCase().includes("liverpool") ||
+      f.away.toLowerCase().includes("liverpool")
+    );
+
+    if (!fixture) {
+      return res.json({
+        error: "Liverpool non trovato",
+        fixtures
+      });
+    }
+
+    const events = await getProviderEvents();
+
+    const matches = events.filter(event =>
+      eventMatchesFixture(
+        event.name,
+        fixture.home,
+        fixture.away
+      )
+    );
+
+    res.json({
+      fixture,
+      providerMatches: matches
+    });
+
+  } catch (e) {
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 
 /* =========================================================
    START
