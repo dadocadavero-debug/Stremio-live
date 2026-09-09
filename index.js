@@ -626,6 +626,12 @@ async function getApiFixtures() {
     events
       .map(parseEspnEvent)
       .filter(Boolean)
+      .filter(item =>
+        wantedFixture(
+          item.home,
+          item.away
+        )
+      )
   );
 
 
@@ -770,33 +776,12 @@ function fixtureToMeta(match) {
 
 async function getCatalogs() {
 
-  // ESPN rimane completo nella cache.
-  const allFixtures =
+  const fixtures =
     await getApiFixtures();
 
-  // Il filtro viene applicato soltanto
-  // al catalogo mostrato in Stremio.
-  const wantedFixtures =
-    allFixtures.filter(
-      fixture =>
-        wantedFixture(
-          fixture.home,
-          fixture.away
-        )
-    );
-
-  // Ordine cronologico.
-  wantedFixtures.sort(
-    (a, b) =>
-      (a.timestamp || 0) -
-      (b.timestamp || 0)
+  return fixtures.map(
+    fixtureToMeta
   );
-
-  // Il client che stiamo usando mostra
-  // al massimo 25 elementi del catalogo.
-  return wantedFixtures
-    .slice(0, 25)
-    .map(fixtureToMeta);
 }
 
 
