@@ -709,50 +709,50 @@ function fixtureToMeta(match) {
 
   const time =
     match.date
-      ? new Date(match.date)
-          .toLocaleString(
-            "it-IT",
-            {
-              timeZone:
-                "Europe/Rome",
-
-              day:
-                "2-digit",
-
-              month:
-                "2-digit",
-
-              hour:
-                "2-digit",
-
-              minute:
-                "2-digit"
-            }
-          )
+      ? new Date(match.date).toLocaleString(
+          "it-IT",
+          {
+            timeZone: "Europe/Rome",
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        )
       : "";
 
+  const description =
+    [
+      match.league,
+      time
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
   return {
-    id:
-      `live:${match.fixtureId}`,
+    id: `live:${String(match.fixtureId)}`,
+    type: "tv",
+    name: title,
 
-    type:
-      "tv",
-
-    name:
-      title,
+    posterShape: "poster",
 
     poster:
-      match.homeLogo,
+      match.homeLogo ||
+      match.awayLogo ||
+      undefined,
+
+    background:
+      match.homeLogo ||
+      match.awayLogo ||
+      undefined,
 
     description:
-      `${match.league}` +
-      (time
-        ? ` • ${time}`
-        : ""),
+      description ||
+      title,
 
-    genres: [
-      "Football"
-    ]
+    genres: ["Football"],
+
+    releaseInfo: "LIVE"
   };
 }
 
