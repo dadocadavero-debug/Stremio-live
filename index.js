@@ -588,17 +588,11 @@ async function getApiFixtures() {
     formato e applichiamo il filtro squadre.
   */
   const fixtures =
-    dedupeFixtures(
-      events
-        .map(parseEspnEvent)
-        .filter(Boolean)
-        .filter(item =>
-          wantedFixture(
-            item.home,
-            item.away
-          )
-        )
-    );
+  dedupeFixtures(
+    events
+      .map(parseEspnEvent)
+      .filter(Boolean)
+  );
 
 
   fixtures.sort(
