@@ -274,7 +274,7 @@ let fixtureCache = {
 };
 
 const FIXTURE_CACHE_MS =
-  2 * 60 * 60 * 1000; // 2 ore
+  10 * 60 * 1000;
 
 
 /* =========================================================
@@ -296,11 +296,13 @@ async function getApiFixtures() {
     );
   }
 
-  const today = dateString(0);
+  const from = dateString(0);
+  const to = dateString(1);
 
-const url =
-  "https://v3.football.api-sports.io/fixtures" +
-  `?date=${today}`;
+  const url =
+    "https://v3.football.api-sports.io/fixtures" +
+    `?from=${from}&to=${to}`;
+
   const data = await getJson(url, {
     headers: {
       "x-apisports-key":
@@ -365,8 +367,6 @@ const url =
       (b.timestamp || 0)
   );
 
-  if (fixtures.length > 0) {
-
   fixtureCache = {
     expires:
       Date.now() + FIXTURE_CACHE_MS,
@@ -374,27 +374,7 @@ const url =
     fixtures
   };
 
-  console.log(
-    `API-Football: salvate ${fixtures.length} fixture in cache`
-  );
-
   return fixtures;
-}
-
-if (fixtureCache.fixtures.length > 0) {
-
-  console.log(
-    "API-Football vuota: utilizzo ultima cache disponibile"
-  );
-
-  return fixtureCache.fixtures;
-}
-
-console.log(
-  "API-Football: nessuna fixture disponibile"
-);
-
-return [];
 }
 
 
@@ -963,44 +943,6 @@ app.get(
     }
   }
 );
-
-app.get("/debug/liverpool", async (req, res) => {
-  try {
-    const fixtures = await getApiFixtures();
-
-    const fixture = fixtures.find(f =>
-      f.home.toLowerCase().includes("liverpool") ||
-      f.away.toLowerCase().includes("liverpool")
-    );
-
-    if (!fixture) {
-      return res.json({
-        error: "Liverpool non trovato",
-        fixtures
-      });
-    }
-
-    const events = await getProviderEvents();
-
-    const matches = events.filter(event =>
-      eventMatchesFixture(
-        event.name,
-        fixture.home,
-        fixture.away
-      )
-    );
-
-    res.json({
-      fixture,
-      providerMatches: matches
-    });
-
-  } catch (e) {
-    res.status(500).json({
-      error: String(e)
-    });
-  }
-});
 
 
 /* =========================================================
