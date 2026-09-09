@@ -274,7 +274,7 @@ let fixtureCache = {
 };
 
 const FIXTURE_CACHE_MS =
-  10 * 60 * 1000;
+  2 * 60 * 60 * 1000; // 2 ore
 
 
 /* =========================================================
@@ -365,6 +365,8 @@ const url =
       (b.timestamp || 0)
   );
 
+  if (fixtures.length > 0) {
+
   fixtureCache = {
     expires:
       Date.now() + FIXTURE_CACHE_MS,
@@ -372,7 +374,27 @@ const url =
     fixtures
   };
 
+  console.log(
+    `API-Football: salvate ${fixtures.length} fixture in cache`
+  );
+
   return fixtures;
+}
+
+if (fixtureCache.fixtures.length > 0) {
+
+  console.log(
+    "API-Football vuota: utilizzo ultima cache disponibile"
+  );
+
+  return fixtureCache.fixtures;
+}
+
+console.log(
+  "API-Football: nessuna fixture disponibile"
+);
+
+return [];
 }
 
 
