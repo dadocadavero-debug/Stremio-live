@@ -177,14 +177,48 @@ function exactWantedTeam(name = "") {
 }
 
 function wantedFixture(home = "", away = "") {
-  if (unwanted(home) || unwanted(away)) {
+  const text = normalize(`${home} ${away}`);
+
+  // Esclusioni da mantenere
+  const blocked = [
+    "women", "woman", "female", "femmin",
+    "u15", "u16", "u17", "u18", "u19",
+    "u20", "u21", "u22", "u23",
+    "youth", "giovan", "primavera",
+    "reserve", "reserves"
+  ];
+
+  if (blocked.some(x => text.includes(x))) {
     return false;
   }
 
-  return (
-    exactWantedTeam(home) ||
-    exactWantedTeam(away)
-  );
+  // Frammenti volutamente corti per questa prova
+  const wanted = [
+    // Italiane
+    "int", "mil", "juv", "nap", "rom",
+    "laz", "ata", "bol", "fio", "tor",
+    "gen", "udi", "cag", "lec", "par",
+    "ver", "com", "cre", "sas", "pis",
+    "sam", "pal", "bar", "spe", "ces",
+    "cat", "mod", "reg", "man", "sud",
+    "car", "ave", "pes", "mon", "emp",
+    "ven", "fro",
+
+    // Big europee
+    "rea", "bar", "atl", "ath", "vil",
+    "bet", "sev", "manc", "liv", "ars",
+    "che", "tot", "new", "bay", "dor",
+    "lev", "pari", "mar", "mon", "ben",
+    "por", "spo", "aja", "psv", "fey",
+
+    // Nazionali
+    "ita", "fra", "ger", "spa", "eng",
+    "por", "net", "bel", "cro", "arg",
+    "bra", "uru", "col", "mex", "uni",
+    "usa", "jap", "mor"
+  ];
+
+  return wanted.some(x => text.includes(x));
 }
 
 
