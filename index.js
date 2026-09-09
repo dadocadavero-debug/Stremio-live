@@ -8,8 +8,14 @@ const PORT = process.env.PORT || 3000;
 const STREMVERSE =
   "https://stremverse1.alwaysdata.net";
 
+// Highfly: SOLO football, senza onlyLive:true
 const HIGHFLY =
-  "https://sports.highfly.dev/eyJpbmNsdWRlU3BvcnRzIjpbImZvb3RiYWxsIl0sIm9ubHlMaXZlIjp0cnVlfQ";
+  "https://sports.highfly.dev/eyJpbmNsdWRlU3BvcnRzIjpbImZvb3RiYWxsIl19";
+
+
+/* =========================================================
+   SQUADRE
+========================================================= */
 
 const italianTeams = [
   "inter", "inter milan", "internazionale",
@@ -30,32 +36,61 @@ const italianTeams = [
 ];
 
 const topEuropeanTeams = [
-  "real madrid", "barcelona", "fc barcelona",
+  "real madrid",
+  "barcelona", "fc barcelona",
   "atletico madrid", "atlético madrid",
   "athletic bilbao", "athletic club",
   "villarreal",
   "real betis", "betis",
   "sevilla", "sevilla fc",
-  "manchester city", "manchester united",
-  "liverpool", "arsenal", "chelsea", "tottenham",
+
+  "manchester city",
+  "manchester united",
+  "liverpool",
+  "arsenal",
+  "chelsea",
+  "tottenham",
   "newcastle united",
+
   "bayern munich", "bayern münchen",
-  "borussia dortmund", "bayer leverkusen",
-  "paris saint-germain", "psg",
-  "marseille", "monaco",
-  "benfica", "porto",
-  "sporting cp", "sporting lisbon",
-  "ajax", "psv", "feyenoord"
+  "borussia dortmund",
+  "bayer leverkusen",
+
+  "paris saint-germain",
+  "paris saint germain",
+  "psg",
+  "marseille",
+  "monaco",
+
+  "benfica",
+  "porto",
+  "sporting cp",
+  "sporting lisbon",
+
+  "ajax",
+  "psv",
+  "feyenoord"
 ];
 
 const nationalTeams = [
-  "italy", "italia", "france", "germany",
-  "spain", "england", "portugal",
-  "netherlands", "belgium", "croatia",
-  "argentina", "brazil", "uruguay",
-  "colombia", "mexico",
-  "united states", "usa",
-  "japan", "morocco"
+  "italy", "italia",
+  "france",
+  "germany",
+  "spain",
+  "england",
+  "portugal",
+  "netherlands",
+  "belgium",
+  "croatia",
+  "argentina",
+  "brazil",
+  "uruguay",
+  "colombia",
+  "mexico",
+  "united states",
+  "usa",
+  "japan",
+  "morocco"
 ];
 
 const wantedTeams = [
@@ -63,6 +98,11 @@ const wantedTeams = [
   ...topEuropeanTeams,
   ...nationalTeams
 ];
+
+
+/* =========================================================
+   NORMALIZZAZIONE
+========================================================= */
 
 function normalize(str = "") {
   return str
@@ -75,6 +115,15 @@ function normalize(str = "") {
     .trim();
 }
 
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+
+/* =========================================================
+   ESCLUSIONI
+========================================================= */
+
 function unwanted(name = "") {
   const title = name.toLowerCase();
 
@@ -86,8 +135,14 @@ function unwanted(name = "") {
   );
 }
 
+
+/* =========================================================
+   FILTRO SQUADRE
+========================================================= */
+
 function wanted(meta = {}) {
-  const text = `${meta.name || ""} ${meta.description || ""}`;
+  const text =
+    `${meta.name || ""} ${meta.description || ""}`;
 
   if (unwanted(text)) return false;
 
@@ -95,23 +150,18 @@ function wanted(meta = {}) {
 
   return wantedTeams.some(team => {
     const t = normalize(team);
-    return new RegExp(`(^| )${escapeRegex(t)}( |$)`, "i").test(n);
+
+    return new RegExp(
+      `(^| )${escapeRegex(t)}( |$)`,
+      "i"
+    ).test(n);
   });
 }
 
-function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
-function live(meta) {
-  const text = `${meta.name || ""} ${meta.description || ""}`;
-
-  return (
-    /LIVE\s*NOW/i.test(text) ||
-    /\bLIVE\b/i.test(text) ||
-    /🔴/.test(text)
-  );
-}
+/* =========================================================
+   NOME PARTITA PER DEDUPLICAZIONE
+========================================================= */
 
 function cleanMatchName(name = "") {
   let n = normalize(
@@ -150,15 +200,18 @@ function cleanMatchName(name = "") {
     "villarreal cf": "villarreal"
   };
 
-  // Prima sostituisce gli alias più lunghi
-  const sortedAliases = Object.keys(aliases)
-    .sort((a, b) => b.length - a.length);
+  const sortedAliases =
+    Object.keys(aliases)
+      .sort((a, b) => b.length - a.length);
 
   for (const alias of sortedAliases) {
     const canonical = aliases[alias];
 
     n = n.replace(
-      new RegExp(`(^| )${escapeRegex(alias)}(?= |$)`, "g"),
+      new RegExp(
+        `(^| )${escapeRegex(alias)}(?= |$)`,
+        "g"
+      ),
       `$1${canonical}`
     );
   }
@@ -168,9 +221,16 @@ function cleanMatchName(name = "") {
     .trim();
 }
 
+
+/* =========================================================
+   FETCH
+========================================================= */
+
 async function getJson(url) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
+
+  const timer =
+    setTimeout(() => controller.abort(), 10000);
 
   try {
     const r = await fetch(url, {
@@ -180,238 +240,550 @@ async function getJson(url) {
       }
     });
 
-    if (!r.ok) throw new Error(`${r.status} ${url}`);
+    if (!r.ok) {
+      throw new Error(`${r.status} ${url}`);
+    }
 
     return await r.json();
+
   } finally {
     clearTimeout(timer);
   }
 }
 
+
+/* =========================================================
+   CATALOGO UNIFICATO
+========================================================= */
+
 async function getCatalogs() {
-  const urls = [
-    `${STREMVERSE}/catalog/tv/stremverse_live_events/genre=Football.json`,
-    `${HIGHFLY}/catalog/sport/sports_live.json`
+
+  /*
+    1 = StremVerse Football
+    2 = Highfly Live
+    3 = Highfly Today
+    4 = Highfly Football
+
+    Sono QUATTRO sorgenti interne,
+    ma Stremio vedrà sempre UN SOLO catalogo.
+  */
+
+  const sourcesToFetch = [
+    {
+      source: "sv",
+      url:
+        `${STREMVERSE}/catalog/tv/stremverse_live_events/genre=Football.json`
+    },
+
+    {
+      source: "hf",
+      url:
+        `${HIGHFLY}/catalog/sport/sports_live.json`
+    },
+
+    {
+      source: "hf",
+      url:
+        `${HIGHFLY}/catalog/sport/sports_today.json`
+    },
+
+    {
+      source: "hf",
+      url:
+        `${HIGHFLY}/catalog/sport/sports_football.json`
+    }
   ];
 
   const results = await Promise.allSettled(
-    urls.map(url => getJson(url))
+    sourcesToFetch.map(item => getJson(item.url))
   );
 
   const all = [];
 
-  if (results[0].status === "fulfilled") {
-  for (const meta of results[0].value.metas || []) {
-    if (!wanted(meta)) continue;
-// if (!live(meta)) continue;
+  /*
+    Evita che lo stesso ID Highfly venga aggiunto
+    più volte perché presente in live/today/football.
+  */
+  const sourceIds = new Set();
+
+
+  for (let i = 0; i < results.length; i++) {
+
+    const result = results[i];
+    const sourceInfo = sourcesToFetch[i];
+
+    if (result.status !== "fulfilled") {
+      console.error(
+        "Catalog error:",
+        sourceInfo.url,
+        result.reason
+      );
+
+      continue;
+    }
+
+    const metas = result.value.metas || [];
+
+    for (const meta of metas) {
+
+      if (!wanted(meta)) continue;
+
+      const uniqueSourceId =
+        `${sourceInfo.source}:${meta.id}`;
+
+      if (sourceIds.has(uniqueSourceId)) {
+        continue;
+      }
+
+      sourceIds.add(uniqueSourceId);
 
       all.push({
         ...meta,
-        id: `sv:${meta.id}`,
+
+        id:
+          `${sourceInfo.source}:${meta.id}`,
+
         type: "tv",
-        _source: "sv",
-        _originalId: meta.id
+
+        _source:
+          sourceInfo.source,
+
+        _originalId:
+          meta.id
       });
     }
   }
 
-  if (results[1].status === "fulfilled") {
-  for (const meta of results[1].value.metas || []) {
-    if (!wanted(meta)) continue;
-    all.push({
-      ...meta,
-      id: `hf:${meta.id}`,
-      type: "tv",
-      _source: "hf",
-      _originalId: meta.id
-    });
-  }
-}
+
+  /* =======================================================
+     RAGGRUPPA LA STESSA PARTITA
+  ======================================================= */
 
   const groups = new Map();
 
   for (const meta of all) {
-    const key = cleanMatchName(meta.name);
 
-    if (!groups.has(key)) groups.set(key, []);
+    const key =
+      cleanMatchName(meta.name);
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+
     groups.get(key).push(meta);
   }
+
+
+  /* =======================================================
+     CREA METAS FINALI
+  ======================================================= */
 
   const metas = [];
 
   for (const [key, items] of groups) {
+
+    /*
+      Se la stessa partita esiste sia su
+      StremVerse che Highfly,
+      preferiamo poster/metadati StremVerse.
+    */
+
     const first =
-  items.find(item => item._source === "sv") || items[0];
+      items.find(
+        item => item._source === "sv"
+      ) || items[0];
 
-    const sources = items.map(item => ({
-      source: item._source,
-      id: item._originalId
-    }));
 
-    const encoded = Buffer.from(
-      JSON.stringify(sources)
-    ).toString("base64url");
+    /*
+      Una partita può avere più sorgenti stream.
+    */
+
+    const sources = [];
+
+    const seenSources = new Set();
+
+    for (const item of items) {
+
+      const sourceKey =
+        `${item._source}:${item._originalId}`;
+
+      if (seenSources.has(sourceKey)) {
+        continue;
+      }
+
+      seenSources.add(sourceKey);
+
+      sources.push({
+        source: item._source,
+        id: item._originalId
+      });
+    }
+
+
+    const encoded =
+      Buffer.from(
+        JSON.stringify(sources)
+      ).toString("base64url");
+
 
     metas.push({
       id: `live:${encoded}`,
+
       type: "tv",
+
       name: first.name,
+
       poster: first.poster,
+
       background: first.background,
+
       logo: first.logo,
-      description: first.description || "LIVE",
-      genres: ["Football", "LIVE"]
+
+      description:
+        first.description || "Football",
+
+      genres: ["Football"]
     });
   }
+
 
   return metas;
 }
 
+
+/* =========================================================
+   MANIFEST
+========================================================= */
+
 const manifest = {
   id: "community.stremio.live.football",
-  version: "1.0.0",
+
+  version: "1.0.1",
+
   name: "LIVE",
-  description: "LIVE Football - StremVerse + Highfly",
-  resources: ["catalog", "meta", "stream"],
+
+  description:
+    "LIVE Football - StremVerse + Highfly",
+
+  resources: [
+    "catalog",
+    "meta",
+    "stream"
+  ],
+
   types: ["tv"],
+
   catalogs: [
     {
       type: "tv",
+
       id: "live_football",
+
       name: "🔴 LIVE Football ⚽"
     }
   ],
+
   idPrefixes: ["live:"]
 };
+
+
+/* =========================================================
+   ROUTES
+========================================================= */
 
 app.get("/", (req, res) => {
   res.redirect("/manifest.json");
 });
 
+
 app.get("/manifest.json", (req, res) => {
   res.json(manifest);
 });
 
-app.get("/catalog/tv/live_football.json", async (req, res) => {
-  try {
-    res.json({
-      metas: await getCatalogs()
-    });
-  } catch (e) {
-    console.error(e);
-    res.json({ metas: [] });
+
+app.get(
+  "/catalog/tv/live_football.json",
+  async (req, res) => {
+
+    try {
+
+      res.json({
+        metas: await getCatalogs()
+      });
+
+    } catch (e) {
+
+      console.error(e);
+
+      res.json({
+        metas: []
+      });
+    }
   }
-});
+);
+
+
+/* =========================================================
+   DECODE SOURCES
+========================================================= */
 
 function decodeSources(id) {
-  if (!id.startsWith("live:")) return [];
+
+  if (!id.startsWith("live:")) {
+    return [];
+  }
 
   try {
+
     return JSON.parse(
       Buffer.from(
         id.substring(5),
         "base64url"
       ).toString()
     );
+
   } catch {
+
     return [];
   }
 }
 
-app.get("/meta/tv/:id.json", async (req, res) => {
-  try {
-    const metas = await getCatalogs();
-    const meta = metas.find(m => m.id === req.params.id);
 
-    res.json({
-      meta: meta || null
-    });
-  } catch (e) {
-    console.error(e);
-    res.json({ meta: null });
-  }
-});
+/* =========================================================
+   META
+========================================================= */
 
-app.get("/stream/tv/:id.json", async (req, res) => {
-  const sources = decodeSources(req.params.id);
-
-  const requests = sources.map(async src => {
-    let url;
-
-    if (src.source === "sv") {
-      url =
-        `${STREMVERSE}/stream/tv/${encodeURIComponent(src.id)}.json`;
-    } else {
-      url =
-        `${HIGHFLY}/stream/sport/${encodeURIComponent(src.id)}.json`;
-    }
+app.get(
+  "/meta/tv/:id.json",
+  async (req, res) => {
 
     try {
-      const data = await getJson(url);
 
-      return (data.streams || []).map(stream => ({
-        ...stream,
-        name:
-          src.source === "sv"
-            ? `StremVerse • ${stream.name || "LIVE"}`
-            : `Highfly • ${stream.name || "LIVE"}`
-      }));
+      const metas =
+        await getCatalogs();
+
+      const meta =
+        metas.find(
+          m => m.id === req.params.id
+        );
+
+      res.json({
+        meta: meta || null
+      });
+
     } catch (e) {
+
       console.error(e);
-      return [];
+
+      res.json({
+        meta: null
+      });
     }
-  });
+  }
+);
 
-  const results = await Promise.all(requests);
-  const streams = results.flat();
 
-  res.json({ streams });
-});
+/* =========================================================
+   STREAM
+========================================================= */
 
-app.get("/debug/highfly", async (req, res) => {
-  try {
-    const data = await getJson(
-      `${HIGHFLY}/catalog/sport/sports_live.json`
+app.get(
+  "/stream/tv/:id.json",
+  async (req, res) => {
+
+    const sources =
+      decodeSources(req.params.id);
+
+    const requests =
+      sources.map(async src => {
+
+        let url;
+
+        if (src.source === "sv") {
+
+          url =
+            `${STREMVERSE}/stream/tv/` +
+            `${encodeURIComponent(src.id)}.json`;
+
+        } else {
+
+          url =
+            `${HIGHFLY}/stream/sport/` +
+            `${encodeURIComponent(src.id)}.json`;
+        }
+
+
+        try {
+
+          const data =
+            await getJson(url);
+
+          return (data.streams || [])
+            .map(stream => ({
+              ...stream,
+
+              name:
+                src.source === "sv"
+                  ? `StremVerse • ${stream.name || "LIVE"}`
+                  : `Highfly • ${stream.name || "LIVE"}`
+            }));
+
+        } catch (e) {
+
+          console.error(e);
+
+          return [];
+        }
+      });
+
+
+    const results =
+      await Promise.all(requests);
+
+    const streams =
+      results.flat();
+
+    res.json({
+      streams
+    });
+  }
+);
+
+
+/* =========================================================
+   DEBUG STREMVERSE
+========================================================= */
+
+app.get(
+  "/debug/stremverse",
+  async (req, res) => {
+
+    try {
+
+      const data =
+        await getJson(
+          `${STREMVERSE}/catalog/tv/stremverse_live_events/genre=Football.json`
+        );
+
+      const metas =
+        (data.metas || [])
+          .map(meta => ({
+            id: meta.id,
+            name: meta.name,
+            description: meta.description,
+            wanted: wanted(meta)
+          }));
+
+      res.json({
+        count: metas.length,
+        metas
+      });
+
+    } catch (e) {
+
+      res.status(500).json({
+        error: String(e)
+      });
+    }
+  }
+);
+
+
+/* =========================================================
+   DEBUG HIGHFLY
+========================================================= */
+
+app.get(
+  "/debug/highfly",
+  async (req, res) => {
+
+    const catalogs = [
+      "sports_live",
+      "sports_today",
+      "sports_football"
+    ];
+
+    const output = {};
+
+    for (const catalog of catalogs) {
+
+      try {
+
+        const data =
+          await getJson(
+            `${HIGHFLY}/catalog/sport/${catalog}.json`
+          );
+
+        output[catalog] = {
+          count: (data.metas || []).length,
+
+          metas:
+            (data.metas || [])
+              .map(meta => ({
+                id: meta.id,
+                name: meta.name,
+                description: meta.description,
+                wanted: wanted(meta)
+              }))
+        };
+
+      } catch (e) {
+
+        output[catalog] = {
+          error: String(e)
+        };
+      }
+    }
+
+    res.json(output);
+  }
+);
+
+
+/* =========================================================
+   DEBUG FINALE
+========================================================= */
+
+app.get(
+  "/debug/final",
+  async (req, res) => {
+
+    try {
+
+      const metas =
+        await getCatalogs();
+
+      res.json({
+        count: metas.length,
+
+        metas:
+          metas.map(meta => ({
+            id: meta.id,
+            name: meta.name,
+            description: meta.description
+          }))
+      });
+
+    } catch (e) {
+
+      res.status(500).json({
+        error: String(e)
+      });
+    }
+  }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Server running on port ${PORT}`
     );
-
-    const metas = (data.metas || []).map(meta => ({
-      id: meta.id,
-      name: meta.name,
-      description: meta.description
-    }));
-
-    res.json({
-      count: metas.length,
-      metas
-    });
-  } catch (e) {
-    console.error(e);
-
-    res.status(500).json({
-      error: String(e)
-    });
   }
-});
-
-app.get("/debug/final", async (req, res) => {
-  try {
-    const metas = await getCatalogs();
-
-    res.json({
-      count: metas.length,
-      metas: metas.map(meta => ({
-        id: meta.id,
-        name: meta.name,
-        description: meta.description
-      }))
-    });
-  } catch (e) {
-    res.status(500).json({
-      error: String(e)
-    });
-  }
-});
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+);
