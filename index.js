@@ -794,6 +794,44 @@ app.get("/debug/ids", async (req, res) => {
   }
 });
 
+app.get("/debug/compare", async (req, res) => {
+  try {
+    const metas = await getCatalogs();
+
+    const selected = metas.filter(meta => {
+      const name = (meta.name || "").toLowerCase();
+
+      return (
+        name.includes("barcelona") ||
+        name.includes("liverpool") ||
+        name.includes("paris saint-germain")
+      );
+    });
+
+    res.json({
+      count: selected.length,
+      metas: selected.map(meta => ({
+        id: meta.id,
+        idLength: meta.id.length,
+        type: meta.type,
+        name: meta.name,
+        poster: meta.poster,
+        background: meta.background,
+        logo: meta.logo,
+        description: meta.description,
+        genres: meta.genres
+      }))
+    });
+
+  } catch (e) {
+    console.error(e);
+
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 
 /* =========================================================
    START
