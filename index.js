@@ -346,35 +346,230 @@ async function getApiFixtures() {
 
         away:
           item.teams?.away?.name || "",
+/* =========================================================
+   CACHE API-FOOTBALL
+========================================================= */
 
-        homeLogo:
-          item.teams?.home?.logo,
+let fixtureCache = {
+  loaded: false,
+  expires: 0,
+  fixtures: []
+};
 
-        awayLogo:
-          item.teams?.away?.logo
-      }))
-      .filter(item =>
-        item.fixtureId &&
-        wantedFixture(
-          item.home,
-          item.away
-        )
+/*
+  2 ore di cache.
+  La chiamata API viene fatta solo quando il catalogo
+  deve realmente essere aggiornato.
+*/
+const FIXTURE_CACHE_MS =
+  2 * 60 * 60 * 1000;
+
+
+/* =========================================================
+   API-FOOTBALL
+========================================================= */
+
+async function getApiFixtures() {
+
+  /*
+    Cache valida: restituiamo quella.
+    Funziona anche se contiene 0 risultati,
+    evitando richieste API continue.
+  */
+  if (
+    fixtureCache.loaded &&
+    fixtureCache.expires > Date.now()
+  ) {
+    return fixtureCache.fixtures;
+  }
+
+  if (!API_FOOTBALL_KEY) {
+    throw new Error(
+      "API_FOOTBALL_KEY non configurata"
+    );
+  }
+
+  /*
+    Usiamo la stessa chiamata ?date=...
+    che nel test aveva restituito 324 fixture.
+  */
+  const today = dateString(0);
+
+  const url =
+    "https://v3.football.api-sports.io/fixtures" +
+    `?date=${today}`;
+
+  try {
+
+    const data = await getJson(url, {
+      headers: {
+        "x-apisports-key":
+          API_FOOTBALL_KEY
+      }
+    });
+
+    if (
+      data.errors &&
+      Object.keys(data.errors).length
+    ) {
+      console.error(
+        "API-Football errors:",
+        data.errors
       );
 
-  fixtures.sort(
-    (a, b) =>
-      (a.timestamp || 0) -
-      (b.timestamp || 0)
-  );
+      /*
+        Se avevamo già dati validi,
+        continuiamo a usare quelli.
+      */
+      if (fixtureCache.fixtures.length > 0) {
+        fixtureCache.expires =
+          Date.now() + FIXTURE_CACHE_MS;
 
-  fixtureCache = {
-    expires:
-      Date.now() + FIXTURE_CACHE_MS,
+        return fixtureCache.fixtures;
+      }
+    }
 
-    fixtures
-  };
+    const rawFixtures =
+      data.response || [];
 
-  return fixtures;
+    console.log(
+      `API-Football: ricevute ${rawFixtures.length} fixture`
+    );
+
+    const fixtures =
+      rawFixtures
+        .map(item => ({
+          fixtureId:
+            item.fixture?.id,
+
+          date:
+            item.fixture?.date,
+
+          timestamp:
+            item.fixture?.timestamp,
+
+          status:
+            item.fixture?.status?.short,
+
+          league:
+            item.league?.name || "",
+
+          country:
+            item.league?.country || "",
+
+          home:
+            item.teams?.home?.name || "",
+
+          away:
+            item.teams?.away?.name || "",
+
+          homeLogo:
+            item.teams?.home?.logo,
+
+          awayLogo:
+            item.teams?.away?.logo
+        }))
+        .filter(item =>
+          item.fixtureId &&
+          wantedFixture(
+            item.home,
+            item.away
+          )
+        );
+
+    fixtures.sort(
+      (a, b) =>
+        (a.timestamp || 0) -
+        (b.timestamp || 0)
+    );
+
+    console.log(
+      `API-Football: ${fixtures.length} fixture dopo il filtro`
+    );
+
+    /*
+      Se abbiamo ottenuto risultati validi,
+      salviamoli per 2 ore.
+    */
+    if (fixtures.length > 0) {
+
+      fixtureCache = {
+        loaded: true,
+        expires:
+          Date.now() + FIXTURE_CACHE_MS,
+        fixtures
+      };
+
+      return fixtures;
+    }
+
+    /*
+      L'API ha risposto ma il risultato filtrato
+      è vuoto.
+
+      Se esiste una vecchia cache valida,
+      NON la cancelliamo.
+    */
+    if (fixtureCache.fixtures.length > 0) {
+
+      console.log(
+        "API-Football vuota: mantengo la cache precedente"
+      );
+
+      fixtureCache.loaded = true;
+      fixtureCache.expires =
+        Date.now() + FIXTURE_CACHE_MS;
+
+      return fixtureCache.fixtures;
+    }
+
+    /*
+      Nessuna vecchia cache disponibile.
+      Memorizziamo comunque il risultato vuoto
+      per evitare di consumare continuamente API.
+    */
+    fixtureCache = {
+      loaded: true,
+      expires:
+        Date.now() + FIXTURE_CACHE_MS,
+      fixtures: []
+    };
+
+    return [];
+
+  } catch (e) {
+
+    console.error(
+      "Errore API-Football:",
+      e
+    );
+
+    /*
+      Se API-Football ha un problema temporaneo,
+      utilizziamo i dati precedenti.
+    */
+    if (fixtureCache.fixtures.length > 0) {
+
+      fixtureCache.loaded = true;
+      fixtureCache.expires =
+        Date.now() + FIXTURE_CACHE_MS;
+
+      return fixtureCache.fixtures;
+    }
+
+    /*
+      Anche l'errore viene temporaneamente
+      memorizzato per evitare raffiche di richieste.
+    */
+    fixtureCache = {
+      loaded: true,
+      expires:
+        Date.now() + FIXTURE_CACHE_MS,
+      fixtures: []
+    };
+
+    return [];
+  }
 }
 
 
