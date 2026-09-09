@@ -1,3 +1,5 @@
+// VERSIONE ESPN 2.2.0 - NO API-FOOTBALL
+
 const express = require("express");
 
 const app = express();
@@ -10,9 +12,6 @@ const STREMVERSE =
 
 const HIGHFLY =
   "https://sports.highfly.dev/eyJpbmNsdWRlU3BvcnRzIjpbImZvb3RiYWxsIl19";
-
-const API_FOOTBALL_KEY =
-  process.env.API_FOOTBALL_KEY;
 
 
 /* =========================================================
@@ -32,7 +31,7 @@ const italianTeams = [
   "sampdoria", "palermo", "bari",
   "spezia", "cesena", "catanzaro",
   "modena", "reggiana", "mantova",
-  "sudtirol", "sÃ¼dtirol", "carrarese",
+  "sudtirol", "carrarese",
   "avellino", "pescara", "monza",
   "empoli", "venezia", "frosinone"
 ];
@@ -40,7 +39,7 @@ const italianTeams = [
 const topEuropeanTeams = [
   "real madrid",
   "barcelona", "fc barcelona",
-  "atletico madrid", "atlÃ©tico madrid",
+  "atletico madrid", "atletico de madrid",
   "athletic bilbao", "athletic club",
   "villarreal",
   "real betis", "betis",
@@ -54,7 +53,7 @@ const topEuropeanTeams = [
   "tottenham",
   "newcastle united",
 
-  "bayern munich", "bayern mÃ¼nchen",
+  "bayern munich", "bayern munchen",
   "borussia dortmund",
   "bayer leverkusen",
 
@@ -148,7 +147,7 @@ function canonicalTeam(name = "") {
 
 
 /* =========================================================
-   ESCLUSIONI
+   ESCLUSIONI + FILTRO
 ========================================================= */
 
 function unwanted(name = "") {
@@ -159,11 +158,6 @@ function unwanted(name = "") {
     /\breserves?\b|\bb team\b|\bteam b\b/i.test(name)
   );
 }
-
-
-/* =========================================================
-   FILTRO SQUADRE
-========================================================= */
 
 const wantedClubNames = [
   ...italianTeams,
@@ -212,7 +206,7 @@ async function getJson(url, options = {}) {
       ...options,
       signal: controller.signal,
       headers: {
-        "User-Agent": "Stremio-LIVE/2.1",
+        "User-Agent": "Stremio-LIVE/2.2",
         ...(options.headers || {})
       }
     });
@@ -232,45 +226,273 @@ async function getJson(url, options = {}) {
 
 
 /* =========================================================
-   DATA
+   DATA EUROPE/ROME
 ========================================================= */
 
 function dateString(offsetDays = 0) {
-  const d = new Date();
+  const d =
+    new Date(
+      Date.now() +
+      offsetDays * 86400000
+    );
 
-  d.setUTCDate(
-    d.getUTCDate() + offsetDays
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "Europe/Rome",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    ).formatToParts(d);
+
+  const get =
+    type =>
+      parts.find(
+        p => p.type === type
+      )?.value || "";
+
+  return (
+    `${get("year")}-` +
+    `${get("month")}-` +
+    `${get("day")}`
   );
+}
 
-  return d
-    .toISOString()
-    .slice(0, 10);
+function espnDate(offsetDays = 0) {
+  return dateString(offsetDays)
+    .replace(/-/g, "");
 }
 
 
 /* =========================================================
-   CACHE API-FOOTBALL
+   ESPN
+========================================================= */
+
+const ESPN_BASE =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer";
+
+const ESPN_FALLBACK_LEAGUES = [
+  "ita.1",
+  "ita.2",
+
+  "eng.1",
+  "eng.2",
+  "eng.fa",
+  "eng.league_cup",
+
+  "esp.1",
+  "esp.2",
+  "esp.copa_del_rey",
+
+  "ger.1",
+  "ger.2",
+  "ger.dfb_pokal",
+
+  "fra.1",
+  "fra.2",
+
+  "por.1",
+  "ned.1",
+
+  "uefa.champions",
+  "uefa.europa",
+  "uefa.europa.conf",
+  "uefa.super_cup",
+
+  "uefa.nations",
+  "uefa.euro",
+  "uefa.euroq",
+
+  "fifa.world",
+  "fifa.worldq.uefa",
+  "fifa.worldq.conmebol",
+  "fifa.worldq.concacaf",
+  "fifa.worldq.afc",
+  "fifa.worldq.caf",
+
+  "conmebol.libertadores",
+  "conmebol.sudamericana",
+
+  "usa.1",
+  "mex.1"
+];
+
+
+/* =========================================================
+   CACHE ESPN
 ========================================================= */
 
 let fixtureCache = {
   loaded: false,
   expires: 0,
-  fixtures: []
+  fixtures: [],
+  source: null,
+  rawCount: 0,
+  lastError: null,
+  updatedAt: null
 };
 
 const FIXTURE_CACHE_MS =
-  2 * 60 * 60 * 1000;
+  30 * 60 * 1000;
 
 
 /* =========================================================
-   API-FOOTBALL
+   PARSING ESPN
+========================================================= */
+
+function parseEspnEvent(event) {
+
+  const competition =
+    event.competitions?.[0];
+
+  if (!competition) {
+    return null;
+  }
+
+  const competitors =
+    Array.isArray(
+      competition.competitors
+    )
+      ? competition.competitors
+      : [];
+
+  const home =
+    competitors.find(
+      c => c.homeAway === "home"
+    );
+
+  const away =
+    competitors.find(
+      c => c.homeAway === "away"
+    );
+
+  if (!home || !away) {
+    return null;
+  }
+
+  const homeName =
+    home.team?.displayName ||
+    home.team?.name ||
+    "";
+
+  const awayName =
+    away.team?.displayName ||
+    away.team?.name ||
+    "";
+
+  if (!homeName || !awayName) {
+    return null;
+  }
+
+  const date =
+    competition.date ||
+    event.date ||
+    null;
+
+  return {
+    fixtureId:
+      String(event.id),
+
+    date,
+
+    timestamp:
+      date
+        ? Math.floor(
+            new Date(date).getTime() /
+            1000
+          )
+        : 0,
+
+    status:
+      event.status?.type?.state ||
+      event.status?.type?.name ||
+      "",
+
+    league:
+      event.league?.name ||
+      "",
+
+    country: "",
+
+    home:
+      homeName,
+
+    away:
+      awayName,
+
+    homeLogo:
+      home.team?.logo ||
+      home.team?.logos?.[0]?.href ||
+      null,
+
+    awayLogo:
+      away.team?.logo ||
+      away.team?.logos?.[0]?.href ||
+      null
+  };
+    }
+
+/* =========================================================
+   DEDUPLICAZIONE FIXTURE
+========================================================= */
+
+function dedupeFixtures(fixtures) {
+
+  const seen = new Set();
+  const result = [];
+
+  for (const fixture of fixtures) {
+
+    const key =
+      `${canonicalTeam(fixture.home)}|` +
+      `${canonicalTeam(fixture.away)}|` +
+      `${fixture.date || ""}`;
+
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(fixture);
+  }
+
+  return result;
+}
+
+
+/* =========================================================
+   FETCH ESPN
+========================================================= */
+
+async function fetchEspnLeague(
+  league,
+  date
+) {
+
+  const url =
+    `${ESPN_BASE}/${league}/scoreboard` +
+    `?dates=${date}&limit=1000`;
+
+  const data =
+    await getJson(url);
+
+  return Array.isArray(data.events)
+    ? data.events
+    : [];
+}
+
+
+/* =========================================================
+   FIXTURE ESPN
 ========================================================= */
 
 async function getApiFixtures() {
 
   /*
-    Se la cache Ã¨ ancora valida,
-    NON chiamiamo API-Football.
+    Se abbiamo già una cache valida,
+    non richiamiamo ESPN.
   */
   if (
     fixtureCache.loaded &&
@@ -279,179 +501,200 @@ async function getApiFixtures() {
     return fixtureCache.fixtures;
   }
 
-  if (!API_FOOTBALL_KEY) {
-    throw new Error(
-      "API_FOOTBALL_KEY non configurata"
+  const today =
+    espnDate(0);
+
+  let events = [];
+  let source = "espn:all";
+  let lastError = null;
+
+
+  /*
+    PRIMO TENTATIVO:
+    scoreboard aggregato del calcio.
+  */
+  try {
+
+    events =
+      await fetchEspnLeague(
+        "all",
+        today
+      );
+
+    console.log(
+      `ESPN ALL RAW: ${events.length}`
+    );
+
+  } catch (error) {
+
+    lastError =
+      `ESPN all: ${String(error)}`;
+
+    console.error(
+      "ESPN all error:",
+      error
     );
   }
 
+
   /*
-    Questa Ã¨ la stessa forma di richiesta
-    ?date=... che aveva restituito 324 fixture.
+    FALLBACK:
+    se il calendario aggregato non restituisce
+    eventi, interroghiamo le competizioni.
   */
-  const today = dateString(0);
+  if (events.length === 0) {
 
-  const url =
-    "https://v3.football.api-sports.io/fixtures" +
-    `?date=${today}`;
+    source =
+      "espn:fallback";
 
-  try {
-
-    const data = await getJson(url, {
-      headers: {
-        "x-apisports-key":
-          API_FOOTBALL_KEY
-      }
-    });
-
-    if (
-      data.errors &&
-      Object.keys(data.errors).length > 0
-    ) {
-      console.error(
-        "API-Football errors:",
-        data.errors
+    const results =
+      await Promise.allSettled(
+        ESPN_FALLBACK_LEAGUES.map(
+          league =>
+            fetchEspnLeague(
+              league,
+              today
+            )
+        )
       );
 
-      if (fixtureCache.fixtures.length > 0) {
-        fixtureCache.expires =
-          Date.now() + FIXTURE_CACHE_MS;
+    events =
+      results.flatMap(
+        result =>
+          result.status === "fulfilled"
+            ? result.value
+            : []
+      );
 
-        return fixtureCache.fixtures;
-      }
-    }
-
-    const rawFixtures =
-      Array.isArray(data.response)
-        ? data.response
-        : [];
+    const failures =
+      results.filter(
+        result =>
+          result.status === "rejected"
+      ).length;
 
     console.log(
-      `API-Football RAW: ${rawFixtures.length}`
+      `ESPN FALLBACK RAW: ${events.length} ` +
+      `(${failures} fonti fallite)`
     );
+  }
 
-    const fixtures =
-      rawFixtures
-        .map(item => ({
-          fixtureId:
-            item.fixture?.id,
 
-          date:
-            item.fixture?.date,
+  const rawCount =
+    events.length;
 
-          timestamp:
-            item.fixture?.timestamp,
 
-          status:
-            item.fixture?.status?.short,
-
-          league:
-            item.league?.name || "",
-
-          country:
-            item.league?.country || "",
-
-          home:
-            item.teams?.home?.name || "",
-
-          away:
-            item.teams?.away?.name || "",
-
-          homeLogo:
-            item.teams?.home?.logo || null,
-
-          awayLogo:
-            item.teams?.away?.logo || null
-        }))
+  /*
+    Convertiamo gli eventi ESPN nel nostro
+    formato e applichiamo il filtro squadre.
+  */
+  const fixtures =
+    dedupeFixtures(
+      events
+        .map(parseEspnEvent)
+        .filter(Boolean)
         .filter(item =>
-          item.fixtureId &&
           wantedFixture(
             item.home,
             item.away
           )
-        );
-
-    fixtures.sort(
-      (a, b) =>
-        (a.timestamp || 0) -
-        (b.timestamp || 0)
+        )
     );
 
-    console.log(
-      `API-Football FILTRATE: ${fixtures.length}`
-    );
 
-    /*
-      Se abbiamo partite valide,
-      aggiorniamo la cache.
-    */
-    if (fixtures.length > 0) {
+  fixtures.sort(
+    (a, b) =>
+      (a.timestamp || 0) -
+      (b.timestamp || 0)
+  );
 
-      fixtureCache = {
-        loaded: true,
-        expires:
-          Date.now() + FIXTURE_CACHE_MS,
-        fixtures
-      };
 
-      return fixtures;
-    }
+  console.log(
+    `ESPN FILTRATE: ${fixtures.length}`
+  );
 
-    /*
-      Se API-Football restituisce zero
-      ma abbiamo dati precedenti,
-      NON distruggiamo la vecchia cache.
-    */
-    if (fixtureCache.fixtures.length > 0) {
+
+  /*
+    Se ESPN restituisce zero ma abbiamo
+    una vecchia cache valida, la conserviamo.
+  */
+  if (fixtures.length === 0) {
+
+    if (
+      fixtureCache.fixtures.length > 0
+    ) {
 
       console.log(
-        "Risposta vuota: uso cache precedente"
+        "ESPN vuoto: mantengo cache precedente"
       );
 
       fixtureCache.loaded = true;
+
       fixtureCache.expires =
-        Date.now() + FIXTURE_CACHE_MS;
+        Date.now() +
+        FIXTURE_CACHE_MS;
+
+      fixtureCache.lastError =
+        lastError ||
+        "ESPN ha restituito zero fixture filtrate";
 
       return fixtureCache.fixtures;
     }
 
+
     /*
-      Cache vuota per 2 ore:
-      evita una richiesta ad ogni refresh.
+      Se non abbiamo neppure una vecchia cache,
+      conserviamo lo stato diagnostico soltanto
+      per 5 minuti.
     */
     fixtureCache = {
       loaded: true,
+
       expires:
-        Date.now() + FIXTURE_CACHE_MS,
-      fixtures: []
-    };
+        Date.now() +
+        5 * 60 * 1000,
 
-    return [];
+      fixtures: [],
 
-  } catch (error) {
+      source,
 
-    console.error(
-      "Errore API-Football:",
-      error
-    );
+      rawCount,
 
-    if (fixtureCache.fixtures.length > 0) {
-      fixtureCache.loaded = true;
-      fixtureCache.expires =
-        Date.now() + FIXTURE_CACHE_MS;
+      lastError:
+        lastError ||
+        "ESPN ha restituito zero fixture filtrate",
 
-      return fixtureCache.fixtures;
-    }
-
-    fixtureCache = {
-      loaded: true,
-      expires:
-        Date.now() + FIXTURE_CACHE_MS,
-      fixtures: []
+      updatedAt:
+        new Date().toISOString()
     };
 
     return [];
   }
+
+
+  /*
+    Abbiamo fixture valide:
+    aggiorniamo la cache per 30 minuti.
+  */
+  fixtureCache = {
+    loaded: true,
+
+    expires:
+      Date.now() +
+      FIXTURE_CACHE_MS,
+
+    fixtures,
+
+    source,
+
+    rawCount,
+
+    lastError,
+
+    updatedAt:
+      new Date().toISOString()
+  };
+
+  return fixtures;
 }
 
 
@@ -470,11 +713,20 @@ function fixtureToMeta(match) {
           .toLocaleString(
             "it-IT",
             {
-              timeZone: "Europe/Rome",
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit"
+              timeZone:
+                "Europe/Rome",
+
+              day:
+                "2-digit",
+
+              month:
+                "2-digit",
+
+              hour:
+                "2-digit",
+
+              minute:
+                "2-digit"
             }
           )
       : "";
@@ -483,16 +735,20 @@ function fixtureToMeta(match) {
     id:
       `live:${match.fixtureId}`,
 
-    type: "tv",
+    type:
+      "tv",
 
-    name: title,
+    name:
+      title,
 
     poster:
       match.homeLogo,
 
     description:
       `${match.league}` +
-      (time ? ` â€¢ ${time}` : ""),
+      (time
+        ? ` • ${time}`
+        : ""),
 
     genres: [
       "Football"
@@ -500,7 +756,9 @@ function fixtureToMeta(match) {
   };
 }
 
+
 async function getCatalogs() {
+
   const fixtures =
     await getApiFixtures();
 
@@ -512,56 +770,72 @@ async function getCatalogs() {
 
 /* =========================================================
    PROVIDER EVENTS
+   StremVerse + Highfly
 ========================================================= */
 
 async function getProviderEvents() {
 
   const sources = [
+
     {
-      source: "sv",
+      source:
+        "sv",
+
       url:
         `${STREMVERSE}/catalog/tv/` +
         `stremverse_live_events/genre=Football.json`
     },
 
     {
-      source: "hf",
+      source:
+        "hf",
+
       url:
         `${HIGHFLY}/catalog/sport/` +
         `sports_live.json`
     },
 
     {
-      source: "hf",
+      source:
+        "hf",
+
       url:
         `${HIGHFLY}/catalog/sport/` +
         `sports_today.json`
     },
 
     {
-      source: "hf",
+      source:
+        "hf",
+
       url:
         `${HIGHFLY}/catalog/sport/` +
         `sports_football.json`
     }
   ];
 
+
   const results =
     await Promise.allSettled(
-      sources.map(source =>
-        getJson(source.url)
+      sources.map(
+        source =>
+          getJson(source.url)
       )
     );
 
+
   const events = [];
   const seen = new Set();
+
 
   results.forEach(
     (result, index) => {
 
       if (
-        result.status !== "fulfilled"
+        result.status !==
+        "fulfilled"
       ) {
+
         console.error(
           "Provider catalog error:",
           sources[index].url
@@ -570,8 +844,10 @@ async function getProviderEvents() {
         return;
       }
 
+
       const source =
         sources[index].source;
+
 
       for (
         const meta of
@@ -587,14 +863,20 @@ async function getProviderEvents() {
 
         seen.add(key);
 
+
         events.push({
           source,
-          id: meta.id,
-          name: meta.name || ""
+
+          id:
+            meta.id,
+
+          name:
+            meta.name || ""
         });
       }
     }
   );
+
 
   return events;
 }
@@ -602,9 +884,6 @@ async function getProviderEvents() {
 
 /* =========================================================
    MATCHING PROVIDER
-
-   Qui normalizziamo anche gli alias dentro il nome
-   completo dell'evento.
 ========================================================= */
 
 function eventContainsTeam(
@@ -618,17 +897,14 @@ function eventContainsTeam(
   const canonical =
     canonicalTeam(teamName);
 
-  /*
-    Proviamo prima il nome canonico.
-  */
-  if (event.includes(canonical)) {
+
+  if (
+    event.includes(canonical)
+  ) {
     return true;
   }
 
-  /*
-    Poi tutti gli alias che corrispondono
-    alla stessa squadra.
-  */
+
   for (
     const [alias, target]
     of Object.entries(teamAliases)
@@ -636,14 +912,18 @@ function eventContainsTeam(
 
     if (
       target === canonical &&
-      event.includes(normalize(alias))
+      event.includes(
+        normalize(alias)
+      )
     ) {
       return true;
     }
   }
 
+
   return false;
 }
+
 
 function eventMatchesFixture(
   eventName,
@@ -652,8 +932,14 @@ function eventMatchesFixture(
 ) {
 
   return (
-    eventContainsTeam(eventName, home) &&
-    eventContainsTeam(eventName, away)
+    eventContainsTeam(
+      eventName,
+      home
+    ) &&
+    eventContainsTeam(
+      eventName,
+      away
+    )
   );
 }
 
@@ -661,9 +947,8 @@ function eventMatchesFixture(
 /* =========================================================
    TROVA FIXTURE
 
-   IMPORTANTE:
-   NON chiama API-Football.
-   Usa esclusivamente la cache giÃ  caricata dal catalogo.
+   Non richiama ESPN.
+   Usa esclusivamente la cache.
 ========================================================= */
 
 function findFixture(id) {
@@ -675,40 +960,36 @@ function findFixture(id) {
     return null;
   }
 
+
   const fixtureId =
-    Number(
-      id.substring(5)
-    );
+    id.substring(5);
+
 
   if (!fixtureId) {
     return null;
   }
 
+
   return (
     fixtureCache.fixtures.find(
       fixture =>
-        fixture.fixtureId === fixtureId
+        String(
+          fixture.fixtureId
+        ) ===
+        String(fixtureId)
     ) || null
   );
-}
-
-
-/* =========================================================
+}/* =========================================================
    MANIFEST
 ========================================================= */
 
 const manifest = {
-  id:
-    "community.stremio.live.football",
-
-  version:
-    "2.1.0",
-
-  name:
-    "LIVE",
+  id: "community.stremio.live.football",
+  version: "2.2.0",
+  name: "LIVE",
 
   description:
-    "Football calendar + StremVerse + Highfly streams",
+    "ESPN football calendar + StremVerse + Highfly streams",
 
   resources: [
     "catalog",
@@ -724,7 +1005,7 @@ const manifest = {
     {
       type: "tv",
       id: "live_football_v4",
-      name: "ðŸ”´ LIVE Football âš½"
+      name: "🔴 LIVE Football ⚽"
     }
   ],
 
@@ -735,16 +1016,13 @@ const manifest = {
 
 
 /* =========================================================
-   ROOT + MANIFEST
+   MANIFEST ROUTE
 ========================================================= */
-
-app.get("/", (req, res) => {
-  res.redirect("/manifest.json");
-});
 
 app.get(
   "/manifest.json",
   (req, res) => {
+
     res.json(manifest);
   }
 );
@@ -783,27 +1061,47 @@ app.get(
 
 
 /* =========================================================
-   META
-
-   Non effettua una nuova chiamata API.
+   META ROUTE
 ========================================================= */
 
 app.get(
   "/meta/tv/:id.json",
-  (req, res) => {
+  async (req, res) => {
 
     try {
+
+      /*
+        Se la cache non è ancora stata
+        inizializzata, la carichiamo.
+      */
+      if (!fixtureCache.loaded) {
+        await getApiFixtures();
+      }
+
 
       const fixture =
         findFixture(
           req.params.id
         );
 
-      res.json({
-        meta:
+
+      if (!fixture) {
+
+        return res.status(404).json({
+          error:
+            "Fixture not found"
+        });
+      }
+
+
+      const meta =
+        fixtureToMeta(
           fixture
-            ? fixtureToMeta(fixture)
-            : null
+        );
+
+
+      res.json({
+        meta
       });
 
     } catch (error) {
@@ -813,8 +1111,9 @@ app.get(
         error
       );
 
-      res.json({
-        meta: null
+      res.status(500).json({
+        error:
+          "Meta error"
       });
     }
   }
@@ -822,9 +1121,7 @@ app.get(
 
 
 /* =========================================================
-   STREAM
-
-   API-Football NON viene chiamata qui.
+   STREAM ROUTE
 ========================================================= */
 
 app.get(
@@ -833,75 +1130,136 @@ app.get(
 
     try {
 
+      /*
+        Se Render è appena partito e la cache
+        non è ancora caricata, recuperiamo
+        prima il calendario ESPN.
+      */
+      if (!fixtureCache.loaded) {
+        await getApiFixtures();
+      }
+
+
       const fixture =
         findFixture(
           req.params.id
         );
 
+
       if (!fixture) {
+
         return res.json({
           streams: []
         });
       }
 
-      const events =
+
+      const providerEvents =
         await getProviderEvents();
 
+
       const matching =
-        events.filter(event =>
-          eventMatchesFixture(
-            event.name,
-            fixture.home,
-            fixture.away
-          )
+        providerEvents.filter(
+          event =>
+            eventMatchesFixture(
+              event.name,
+              fixture.home,
+              fixture.away
+            )
         );
 
-      const requests =
-        matching.map(
-          async event => {
 
-            const url =
-              event.source === "sv"
-                ? `${STREMVERSE}/stream/tv/${encodeURIComponent(event.id)}.json`
-                : `${HIGHFLY}/stream/sport/${encodeURIComponent(event.id)}.json`;
+      const streamResults =
+        await Promise.allSettled(
 
-            try {
+          matching.map(
+            async event => {
+
+              let url;
+
+
+              if (
+                event.source === "sv"
+              ) {
+
+                url =
+                  `${STREMVERSE}/stream/tv/` +
+                  `${encodeURIComponent(event.id)}.json`;
+
+              } else {
+
+                url =
+                  `${HIGHFLY}/stream/sport/` +
+                  `${encodeURIComponent(event.id)}.json`;
+              }
+
 
               const data =
                 await getJson(url);
 
+
               return (
                 data.streams || []
-              ).map(stream => ({
-                ...stream,
+              ).map(
+                stream => ({
 
-                name:
-                  event.source === "sv"
-                    ? `StremVerse â€¢ ${stream.name || "LIVE"}`
-                    : `Highfly â€¢ ${stream.name || "LIVE"}`
-              }));
+                  ...stream,
 
-            } catch (error) {
-
-              console.error(
-                "Stream provider error:",
-                event.name,
-                error
+                  name:
+                    event.source === "sv"
+                      ? `StremVerse • ${
+                          stream.name ||
+                          "Stream"
+                        }`
+                      : `Highfly • ${
+                          stream.name ||
+                          "Stream"
+                        }`
+                })
               );
-
-              return [];
             }
-          }
+          )
         );
 
-      const results =
-        await Promise.all(
-          requests
+
+      const streams =
+        streamResults.flatMap(
+          result =>
+            result.status ===
+            "fulfilled"
+              ? result.value
+              : []
         );
+
+
+      /*
+        Deduplica stream identici.
+      */
+      const unique = [];
+      const seen = new Set();
+
+
+      for (
+        const stream of streams
+      ) {
+
+        const key =
+          stream.url ||
+          stream.externalUrl ||
+          stream.ytId ||
+          JSON.stringify(stream);
+
+        if (seen.has(key)) {
+          continue;
+        }
+
+        seen.add(key);
+        unique.push(stream);
+      }
+
 
       res.json({
-        streams:
-          results.flat()
+        streams: unique
       });
 
     } catch (error) {
@@ -921,8 +1279,6 @@ app.get(
 
 /* =========================================================
    DEBUG CATALOGO
-
-   Usa la stessa cache del catalogo.
 ========================================================= */
 
 app.get(
@@ -939,22 +1295,24 @@ app.get(
           fixtures.length,
 
         fixtures:
-          fixtures.map(f => ({
-            id:
-              `live:${f.fixtureId}`,
+          fixtures.map(
+            fixture => ({
+              id:
+                fixture.fixtureId,
 
-            home:
-              f.home,
+              home:
+                fixture.home,
 
-            away:
-              f.away,
+              away:
+                fixture.away,
 
-            league:
-              f.league,
+              date:
+                fixture.date,
 
-            date:
-              f.date
-          }))
+              league:
+                fixture.league
+            })
+          )
       });
 
     } catch (error) {
@@ -969,10 +1327,11 @@ app.get(
 
 
 /* =========================================================
-   DEBUG API
+   DEBUG CACHE
 
-   Serve a vedere cosa ha ricevuto l'ultima cache.
-   NON effettua una nuova richiesta API.
+   Questa route ci permette anche di verificare
+   immediatamente che Render stia usando
+   davvero la versione ESPN 2.2.0.
 ========================================================= */
 
 app.get(
@@ -980,41 +1339,39 @@ app.get(
   (req, res) => {
 
     res.json({
+      version:
+        "ESPN 2.2.0",
+
       loaded:
         fixtureCache.loaded,
 
       expires:
         fixtureCache.expires,
 
+      source:
+        fixtureCache.source,
+
+      rawCount:
+        fixtureCache.rawCount,
+
+      lastError:
+        fixtureCache.lastError,
+
+      updatedAt:
+        fixtureCache.updatedAt,
+
       count:
         fixtureCache.fixtures.length,
 
       fixtures:
-        fixtureCache.fixtures.map(f => ({
-          id:
-            f.fixtureId,
-
-          home:
-            f.home,
-
-          away:
-            f.away,
-
-          league:
-            f.league,
-
-          date:
-            f.date
-        }))
+        fixtureCache.fixtures
     });
   }
 );
 
 
 /* =========================================================
-   DEBUG MATCHING PROVIDER
-
-   Anche questo NON richiama API-Football.
+   DEBUG MATCH
 ========================================================= */
 
 app.get(
@@ -1023,46 +1380,50 @@ app.get(
 
     try {
 
+      if (!fixtureCache.loaded) {
+        await getApiFixtures();
+      }
+
+
       const fixture =
-        findFixture(
-          `live:${req.params.fixtureId}`
+        fixtureCache.fixtures.find(
+          item =>
+            String(
+              item.fixtureId
+            ) ===
+            String(
+              req.params.fixtureId
+            )
         );
 
+
       if (!fixture) {
+
         return res.status(404).json({
           error:
-            "Fixture non presente nella cache"
+            "Fixture not found"
         });
       }
 
-      const events =
+
+      const providerEvents =
         await getProviderEvents();
 
-      const providerMatches =
-        events.filter(event =>
-          eventMatchesFixture(
-            event.name,
-            fixture.home,
-            fixture.away
-          )
+
+      const matching =
+        providerEvents.filter(
+          event =>
+            eventMatchesFixture(
+              event.name,
+              fixture.home,
+              fixture.away
+            )
         );
 
+
       res.json({
-        fixture: {
-          id:
-            fixture.fixtureId,
-
-          home:
-            fixture.home,
-
-          away:
-            fixture.away,
-
-          league:
-            fixture.league
-        },
-
-        providerMatches
+        fixture,
+        matching
       });
 
     } catch (error) {
@@ -1077,15 +1438,30 @@ app.get(
 
 
 /* =========================================================
-   START
+   ROOT
+========================================================= */
+
+app.get(
+  "/",
+  (req, res) => {
+
+    res.send(
+      "Stremio LIVE Football - ESPN 2.2.0"
+    );
+  }
+);
+
+
+/* =========================================================
+   START SERVER
 ========================================================= */
 
 app.listen(
   PORT,
-  "0.0.0.0",
   () => {
+
     console.log(
-      `Server running on port ${PORT}`
+      `Stremio LIVE ESPN 2.2.0 running on port ${PORT}`
     );
   }
 );
