@@ -832,6 +832,57 @@ app.get("/debug/compare", async (req, res) => {
   }
 });
 
+/* =========================================================
+   DEBUG API-FOOTBALL
+========================================================= */
+
+app.get("/debug/fixtures", async (req, res) => {
+  try {
+    const apiKey = process.env.API_FOOTBALL_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "API_FOOTBALL_KEY non trovata su Render"
+      });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const response = await fetch(
+      `https://v3.football.api-sports.io/fixtures?date=${today}`,
+      {
+        headers: {
+          "x-apisports-key": apiKey
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    res.json({
+      date: today,
+      apiErrors: data.errors,
+      results: data.results,
+      fixtures: (data.response || []).map(item => ({
+        id: item.fixture?.id,
+        date: item.fixture?.date,
+        status: item.fixture?.status?.short,
+        league: item.league?.name,
+        country: item.league?.country,
+        home: item.teams?.home?.name,
+        away: item.teams?.away?.name
+      }))
+    });
+
+  } catch (e) {
+    console.error(e);
+
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 
 /* =========================================================
    START
