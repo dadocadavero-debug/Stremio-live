@@ -179,44 +179,38 @@ function exactWantedTeam(name = "") {
 function wantedFixture(home = "", away = "") {
   const text = normalize(`${home} ${away}`);
 
-  // Esclusioni da mantenere
-  const blocked = [
-    "women", "woman", "female", "femmin",
-    "u15", "u16", "u17", "u18", "u19",
-    "u20", "u21", "u22", "u23",
-    "youth", "giovan", "primavera",
-    "reserve", "reserves"
-  ];
-
-  if (blocked.some(x => text.includes(x))) {
-    return false;
-  }
-
-  // Frammenti volutamente corti per questa prova
   const wanted = [
     // Italiane
-    "int", "mil", "juv", "nap", "rom",
-    "laz", "ata", "bol", "fio", "tor",
-    "gen", "udi", "cag", "lec", "par",
-    "ver", "com", "cre", "sas", "pis",
-    "sam", "pal", "bar", "spe", "ces",
-    "cat", "mod", "reg", "man", "sud",
-    "car", "ave", "pes", "mon", "emp",
-    "ven", "fro",
+    "inter", "milan", "juven", "napol", "roma",
+    "lazio", "atal", "bolog", "fior", "torin",
+    "genoa", "udine", "cagli", "lecce", "parma",
+    "veron", "como", "cremon", "sassu", "pisa",
+    "samp", "paler", "bari", "spezi", "cesen",
+    "catan", "moden", "reggi", "manto", "sudti",
+    "carra", "avell", "pesca", "monza", "empol",
+    "venez", "frosi",
 
     // Big europee
-    "rea", "bar", "atl", "ath", "vil",
-    "bet", "sev", "manc", "liv", "ars",
-    "che", "tot", "new", "bay", "dor",
-    "lev", "pari", "mar", "mon", "ben",
-    "por", "spo", "aja", "psv", "fey",
+    "madrid", "barce", "atlet", "athle",
+    "villa", "betis", "sevil",
+    "manc", "liver", "arsen", "chels",
+    "totte", "newca",
+    "bayer", "dortm", "lever",
+    "paris", "marse", "monac",
+    "benfi", "porto", "sport",
+    "ajax", "psv", "feye",
 
     // Nazionali
-    "ita", "fra", "ger", "spa", "eng",
-    "por", "net", "bel", "cro", "arg",
-    "bra", "uru", "col", "mex", "uni",
-    "usa", "jap", "mor"
+    "ital", "fran", "germ", "spain",
+    "engla", "portu", "nether", "belg",
+    "croat", "argen", "braz", "urug",
+    "colom", "mexic", "united states",
+    "japan", "moroc"
   ];
+
+  if (unwanted(home) || unwanted(away)) {
+    return false;
+  }
 
   return wanted.some(x => text.includes(x));
 }
