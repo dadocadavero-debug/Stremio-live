@@ -477,7 +477,7 @@ const manifest = {
     {
       type: "tv",
 
-      id: "live_football",
+      id: "live_football_v2",
 
       name: "🔴 LIVE Football ⚽"
     }
@@ -502,7 +502,7 @@ app.get("/manifest.json", (req, res) => {
 
 
 app.get(
-  "/catalog/tv/live_football.json",
+  "/catalog/tv/live_football_v2.json",
   async (req, res) => {
 
     try {
