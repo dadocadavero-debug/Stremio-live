@@ -296,13 +296,11 @@ async function getApiFixtures() {
     );
   }
 
-  const from = dateString(0);
-  const to = dateString(1);
+  const today = dateString(0);
 
-  const url =
-    "https://v3.football.api-sports.io/fixtures" +
-    `?from=${from}&to=${to}`;
-
+const url =
+  "https://v3.football.api-sports.io/fixtures" +
+  `?date=${today}`;
   const data = await getJson(url, {
     headers: {
       "x-apisports-key":
