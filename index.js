@@ -32,7 +32,7 @@ const italianTeams = [
   "sampdoria", "palermo", "bari",
   "spezia", "cesena", "catanzaro",
   "modena", "reggiana", "mantova",
-  "sudtirol", "südtirol", "carrarese",
+  "sudtirol", "sÃ¼dtirol", "carrarese",
   "avellino", "pescara", "monza",
   "empoli", "venezia", "frosinone"
 ];
@@ -40,7 +40,7 @@ const italianTeams = [
 const topEuropeanTeams = [
   "real madrid",
   "barcelona", "fc barcelona",
-  "atletico madrid", "atlético madrid",
+  "atletico madrid", "atlÃ©tico madrid",
   "athletic bilbao", "athletic club",
   "villarreal",
   "real betis", "betis",
@@ -54,7 +54,7 @@ const topEuropeanTeams = [
   "tottenham",
   "newcastle united",
 
-  "bayern munich", "bayern münchen",
+  "bayern munich", "bayern mÃ¼nchen",
   "borussia dortmund",
   "bayer leverkusen",
 
@@ -269,7 +269,7 @@ const FIXTURE_CACHE_MS =
 async function getApiFixtures() {
 
   /*
-    Se la cache è ancora valida,
+    Se la cache Ã¨ ancora valida,
     NON chiamiamo API-Football.
   */
   if (
@@ -286,7 +286,7 @@ async function getApiFixtures() {
   }
 
   /*
-    Questa è la stessa forma di richiesta
+    Questa Ã¨ la stessa forma di richiesta
     ?date=... che aveva restituito 324 fixture.
   */
   const today = dateString(0);
@@ -492,7 +492,7 @@ function fixtureToMeta(match) {
 
     description:
       `${match.league}` +
-      (time ? ` • ${time}` : ""),
+      (time ? ` â€¢ ${time}` : ""),
 
     genres: [
       "Football"
@@ -663,7 +663,7 @@ function eventMatchesFixture(
 
    IMPORTANTE:
    NON chiama API-Football.
-   Usa esclusivamente la cache già caricata dal catalogo.
+   Usa esclusivamente la cache giÃ  caricata dal catalogo.
 ========================================================= */
 
 function findFixture(id) {
@@ -724,7 +724,7 @@ const manifest = {
     {
       type: "tv",
       id: "live_football_v4",
-      name: "🔴 LIVE Football ⚽"
+      name: "ðŸ”´ LIVE Football âš½"
     }
   ],
 
@@ -877,8 +877,8 @@ app.get(
 
                 name:
                   event.source === "sv"
-                    ? `StremVerse • ${stream.name || "LIVE"}`
-                    : `Highfly • ${stream.name || "LIVE"}`
+                    ? `StremVerse â€¢ ${stream.name || "LIVE"}`
+                    : `Highfly â€¢ ${stream.name || "LIVE"}`
               }));
 
             } catch (error) {
