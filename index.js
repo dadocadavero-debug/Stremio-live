@@ -773,6 +773,27 @@ app.get(
   }
 );
 
+app.get("/debug/ids", async (req, res) => {
+  try {
+    const metas = await getCatalogs();
+
+    res.json({
+      count: metas.length,
+      metas: metas.map(meta => ({
+        name: meta.name,
+        idLength: meta.id.length,
+        id: meta.id
+      }))
+    });
+  } catch (e) {
+    console.error(e);
+
+    res.status(500).json({
+      error: String(e)
+    });
+  }
+});
+
 
 /* =========================================================
    START
