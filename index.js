@@ -721,38 +721,21 @@ function fixtureToMeta(match) {
         )
       : "";
 
-  const description =
-    [
-      match.league,
-      time
-    ]
-      .filter(Boolean)
-      .join(" • ");
-
   return {
     id: `live:${String(match.fixtureId)}`,
     type: "tv",
     name: title,
 
-    posterShape: "poster",
-
     poster:
       match.homeLogo ||
-      match.awayLogo ||
-      undefined,
+      match.awayLogo,
 
-    background:
-      match.homeLogo ||
-      match.awayLogo ||
-      undefined,
+    posterShape: "square",
 
     description:
-      description ||
-      title,
-
-    genres: ["Football"],
-
-    releaseInfo: "LIVE"
+      time
+        ? `⚽ ${title} • ${time}`
+        : `⚽ ${title}`
   };
 }
 
