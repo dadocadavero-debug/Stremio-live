@@ -460,80 +460,80 @@ async function getProviderEvents() {
    FILTRO + DEDUPLICAZIONE
 ========================================================= */
 
-function eventKey(name = "") {
+function getInterestingTeams(name = "") {
 
-  let n = normalize(name);
-
-
-  // separa le squadre della partita
-  const teams = n
-    .split(/\bvs\b|\bv\b|-/)
-    .map(t => t.trim())
-    .filter(Boolean);
+  const parts =
+    name
+      .split(/\bvs\b|\bv\b| - /i)
+      .map(x => x.trim())
+      .filter(Boolean);
 
 
-  const interesting = [];
+  const found = [];
 
 
-  for (const team of teams) {
+  for (const part of parts) {
 
-    let found = null;
+    const n = normalize(part);
+
+    let canonical = null;
 
 
-    // controlla nomi normali
-    for (const wanted of wantedTeams) {
+    for (const team of wantedTeams) {
+
+      const t = normalize(team);
 
       if (
-        team.includes(
-          normalize(wanted)
-        )
+        n === t ||
+        n.includes(t)
       ) {
-        found = normalize(wanted);
+        canonical = t;
         break;
       }
     }
 
 
-    // controlla alias
-    if (!found) {
+    if (!canonical) {
 
       for (const key of Object.keys(aliases)) {
 
         for (const alias of aliases[key]) {
 
+          const a = normalize(alias);
+
           if (
-            team.includes(
-              normalize(alias)
-            )
+            n === a ||
+            n.includes(a)
           ) {
-            found = normalize(key);
+            canonical = normalize(key);
             break;
           }
         }
 
-        if (found) break;
+        if (canonical) break;
       }
     }
 
 
-    if (found) {
-
-      interesting.push(found);
+    if (canonical) {
+      found.push(canonical);
     }
   }
 
 
-  /*
-    Ordine alfabetico:
-    Inter-Milan e Milan-Inter
-    diventano uguali
-  */
-
   return [
-    ...new Set(interesting)
-  ]
-    .sort()
+    ...new Set(found)
+  ].sort();
+
+}
+
+
+
+function eventKey(name = "") {
+
+  return getInterestingTeams(name)
     .join("|");
+
 }
 
 
