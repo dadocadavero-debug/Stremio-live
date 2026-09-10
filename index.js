@@ -472,52 +472,100 @@ function getInterestingTeams(name = "") {
   const found = [];
 
 
+  const canonicalMap = {
+
+    // ITALIA
+    "internazionale": "inter",
+    "inter milan": "inter",
+    "inter milano": "inter",
+
+    "ac milan": "milan",
+
+    "as roma": "roma",
+
+    "ss lazio": "lazio",
+
+
+    // GERMANIA
+    "bayern munich": "bayern",
+    "bayern munchen": "bayern",
+
+
+    // FRANCIA
+    "paris saint germain": "psg",
+    "paris saint-germain": "psg",
+
+
+    // SPAGNA
+    "fc barcelona": "barcelona",
+
+    
+    // INGHILTERRA
+    "manchester utd": "manchester united",
+    "man united": "manchester united"
+
+  };
+
+
   for (const part of parts) {
 
-    const n = normalize(part);
+    const n =
+      normalize(part);
+
 
     let canonical = null;
 
 
-    for (const team of wantedTeams) {
+    // prima controllo alias precisi
 
-      const t = normalize(team);
+    for (
+      const key of Object.keys(canonicalMap)
+    ) {
 
       if (
-        n === t ||
-        n.includes(t)
+        n.includes(
+          normalize(key)
+        )
       ) {
-        canonical = t;
+
+        canonical =
+          canonicalMap[key];
+
         break;
       }
     }
 
 
+    // poi controllo squadre normali
+
     if (!canonical) {
 
-      for (const key of Object.keys(aliases)) {
+      for (
+        const team of wantedTeams
+      ) {
 
-        for (const alias of aliases[key]) {
+        const t =
+          normalize(team);
 
-          const a = normalize(alias);
 
-          if (
-            n === a ||
-            n.includes(a)
-          ) {
-            canonical = normalize(key);
-            break;
-          }
+        if (
+          n === t ||
+          n.includes(t)
+        ) {
+
+          canonical = t;
+          break;
         }
-
-        if (canonical) break;
       }
     }
 
 
     if (canonical) {
+
       found.push(canonical);
+
     }
+
   }
 
 
@@ -526,7 +574,6 @@ function getInterestingTeams(name = "") {
   ].sort();
 
 }
-
 
 
 function eventKey(name = "") {
