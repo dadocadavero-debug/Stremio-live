@@ -1103,6 +1103,15 @@ app.get(
             .map(
               e => e.name
             )
+
+        riconosciutiComeIndesiderati:
+  all
+    .filter(
+      e => unwanted(e.name)
+    )
+    .map(
+      e => e.name
+    )
       });
 
 
