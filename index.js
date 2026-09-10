@@ -591,8 +591,6 @@ function eventKey(name = "") {
 
 }
 
-}
-
 
 async function getCatalogEvents() {
 
