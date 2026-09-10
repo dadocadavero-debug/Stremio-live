@@ -32,7 +32,12 @@ function normalize(str = "") {
    FILTRO
 ========================================================= */
 
+/* =========================================================
+   FILTRO
+========================================================= */
+
 function unwanted(name = "") {
+
   const n = normalize(name);
 
   return (
@@ -44,88 +49,102 @@ function unwanted(name = "") {
 }
 
 
-const wanted = [
+/*
+   Squadre interessanti.
+   Niente frammenti corti:
+   evitiamo falsi positivi.
+*/
+
+const wantedTeams = [
 
   // ITALIA
   "inter",
   "milan",
-  "juven",
-  "napol",
+  "juventus",
+  "napoli",
   "roma",
   "lazio",
-  "atal",
-  "bolog",
-  "fior",
-  "torin",
+  "atalanta",
+  "bologna",
+  "fiorentina",
+  "torino",
   "genoa",
-  "udine",
-  "cagli",
+  "udinese",
+  "cagliari",
   "lecce",
   "parma",
-  "veron",
+  "verona",
   "como",
-  "cremon",
-  "sassu",
+  "cremonese",
+  "sassuolo",
   "pisa",
-  "samp",
-  "paler",
+  "sampdoria",
+  "palermo",
   "bari",
-  "spezi",
-  "cesen",
-  "catan",
-  "moden",
-  "reggi",
-  "manto",
-  "sudti",
-  "carra",
-  "avell",
-  "pesca",
+  "spezia",
+  "cesena",
+  "catanzaro",
+  "modena",
+  "reggiana",
+  "mantova",
+  "sudtirol",
+  "carrarese",
+  "avellino",
+  "pescara",
   "monza",
-  "empol",
-  "venez",
-  "frosi",
+  "empoli",
+  "venezia",
+  "frosinone",
+
 
   // EUROPA
   "real madrid",
-  "barce",
+  "barcelona",
   "atletico madrid",
-  "athletic",
-  "villa",
-  "betis",
-  "sevil",
+  "athletic club",
+  "villarreal",
+  "real betis",
+  "sevilla",
 
-  "manchester",
-  "liver",
-  "arsen",
-  "chels",
-  "totte",
-  "newca",
+  "manchester city",
+  "manchester united",
+  "liverpool",
+  "arsenal",
+  "chelsea",
+  "tottenham",
+  "newcastle",
 
   "bayern",
-  "dortm",
-  "lever",
+  "borussia dortmund",
+  "bayer leverkusen",
 
-  "paris",
-  "marse",
-  "monac",
+  "psg",
+  "paris saint germain",
 
-  "benfi",
+  "marseille",
+  "monaco",
+
+  "benfica",
   "porto",
   "sporting",
 
   "ajax",
   "psv",
-  "feye",
+  "feyenoord",
+
 
   // NAZIONALI
   "italy",
   "italia",
   "france",
   "germany",
+  "deutschland",
   "spain",
+  "espana",
   "england",
   "portugal",
   "netherlands",
+  "holland",
   "belgium",
   "croatia",
   "argentina",
@@ -140,20 +159,113 @@ const wanted = [
 ];
 
 
+
+/*
+   Alias solo dove il nome cambia davvero.
+*/
+
+const aliases = {
+
+  inter: [
+    "internazionale",
+    "inter milan",
+    "inter milano"
+  ],
+
+  milan: [
+    "ac milan"
+  ],
+
+  napoli: [
+    "ssc napoli"
+  ],
+
+  roma: [
+    "as roma"
+  ],
+
+  lazio: [
+    "ss lazio"
+  ],
+
+  juventus: [
+    "juventus fc",
+    "juve"
+  ],
+
+  psg: [
+    "paris saint germain",
+    "paris saint-germain"
+  ],
+
+  bayern: [
+    "bayern munich",
+    "bayern munchen"
+  ],
+
+  barcelona: [
+    "fc barcelona"
+  ],
+
+  atletico: [
+    "atletico de madrid"
+  ],
+
+  manchester: [
+    "manchester utd",
+    "man united"
+  ]
+};
+
+
+
 function wantedEvent(name = "") {
 
   if (unwanted(name)) {
     return false;
   }
 
-  const n = normalize(name);
 
-  return wanted.some(
-    word =>
-      n.includes(
-        normalize(word)
-      )
-  );
+  const n =
+    normalize(name);
+
+
+  // nome normale
+
+  if (
+    wantedTeams.some(
+      team =>
+        n.includes(
+          normalize(team)
+        )
+    )
+  ) {
+    return true;
+  }
+
+
+  // alias
+
+  for (
+    const key of Object.keys(aliases)
+  ) {
+
+    for (
+      const alias of aliases[key]
+    ) {
+
+      if (
+        n.includes(
+          normalize(alias)
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+
+  return false;
 }
 
 
