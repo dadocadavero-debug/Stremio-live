@@ -775,21 +775,19 @@ function eventToMeta(event) {
       event.name,
 
     poster:
-      event.poster || "",
+      event.poster ||
+      undefined,
 
     posterShape:
       "square",
 
     description:
-      `⚽ LIVE ${event.name}`,
-
-    genres:
-      [
-        "Sports"
-      ],
+      event.description ||
+      `âš½ ${event.name}`,
 
     releaseInfo:
-      "LIVE"
+      event.releaseInfo ||
+      undefined
   };
 }
 
@@ -823,20 +821,17 @@ const manifest = {
   ],
 
   catalogs: [
-  {
-    type:
-      "tv",
+    {
+      type:
+        "tv",
 
-    id:
-      "live_football_v5",
+      id:
+        "live_football_v5",
 
-    name:
-      "🔴 LIVE Football ⚽",
-
-    extraSupported:
-      []
-  }
-],
+      name:
+        "ðŸ”´ LIVE Football âš½"
+    }
+  ],
 
   idPrefixes: [
     "live:"
@@ -1031,11 +1026,11 @@ async function getStreams(
 
       name:
         provider.source === "sv"
-          ? `StremVerse • ${
+          ? `StremVerse â€¢ ${
               stream.name ||
               "Stream"
             }`
-          : `Highfly • ${
+          : `Highfly â€¢ ${
               stream.name ||
               "Stream"
             }`
