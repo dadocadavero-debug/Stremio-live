@@ -6,7 +6,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 const STREMVERSE =
-  "https://stremverse1.alwaysdata.net";
+"https://stremverse1.alwaysdata.net/1q1YqqVKyUgp3DFGqBQA";
 
 const HIGHFLY =
   "https://sports.highfly.dev/eyJpbmNsdWRlU3BvcnRzIjpbImZvb3RiYWxsIl19";
@@ -778,8 +778,8 @@ function eventToMeta(event) {
       event.poster ||
       undefined,
 
-    posterShape:
-      "square",
+    // posterShape:
+//   "landscape",
 
     description:
       event.description ||
