@@ -464,18 +464,76 @@ function eventKey(name = "") {
 
   let n = normalize(name);
 
+
+  // separa le squadre della partita
+  const teams = n
+    .split(/\bvs\b|\bv\b|-/)
+    .map(t => t.trim())
+    .filter(Boolean);
+
+
+  const interesting = [];
+
+
+  for (const team of teams) {
+
+    let found = null;
+
+
+    // controlla nomi normali
+    for (const wanted of wantedTeams) {
+
+      if (
+        team.includes(
+          normalize(wanted)
+        )
+      ) {
+        found = normalize(wanted);
+        break;
+      }
+    }
+
+
+    // controlla alias
+    if (!found) {
+
+      for (const key of Object.keys(aliases)) {
+
+        for (const alias of aliases[key]) {
+
+          if (
+            team.includes(
+              normalize(alias)
+            )
+          ) {
+            found = normalize(key);
+            break;
+          }
+        }
+
+        if (found) break;
+      }
+    }
+
+
+    if (found) {
+
+      interesting.push(found);
+    }
+  }
+
+
   /*
-    Eliminiamo alcune parole che possono
-    differire fra StremVerse e Highfly.
+    Ordine alfabetico:
+    Inter-Milan e Milan-Inter
+    diventano uguali
   */
 
-  n = n
-    .replace(/\bvs\b/g, " ")
-    .replace(/\bv\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return n;
+  return [
+    ...new Set(interesting)
+  ]
+    .sort()
+    .join("|");
 }
 
 
