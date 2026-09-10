@@ -783,7 +783,7 @@ function eventToMeta(event) {
 
     description:
       event.description ||
-      `âš½ ${event.name}`,
+      `⚽ ${event.name}`,
 
     releaseInfo:
       event.releaseInfo ||
@@ -829,7 +829,7 @@ const manifest = {
         "live_football_v5",
 
       name:
-        "ðŸ”´ LIVE Football âš½"
+        "🔴 LIVE Football ⚽"
     }
   ],
 
@@ -1026,11 +1026,11 @@ async function getStreams(
 
       name:
         provider.source === "sv"
-          ? `StremVerse â€¢ ${
+          ? `StremVerse • ${
               stream.name ||
               "Stream"
             }`
-          : `Highfly â€¢ ${
+          : `Highfly • ${
               stream.name ||
               "Stream"
             }`
