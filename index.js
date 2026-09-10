@@ -775,19 +775,21 @@ function eventToMeta(event) {
       event.name,
 
     poster:
-      event.poster ||
-      undefined,
+      event.poster || "",
 
     posterShape:
       "square",
 
     description:
-      event.description ||
-      `⚽ ${event.name}`,
+      `⚽ LIVE ${event.name}`,
+
+    genres:
+      [
+        "Sports"
+      ],
 
     releaseInfo:
-      event.releaseInfo ||
-      undefined
+      "LIVE"
   };
 }
 
@@ -821,17 +823,20 @@ const manifest = {
   ],
 
   catalogs: [
-    {
-      type:
-        "tv",
+  {
+    type:
+      "tv",
 
-      id:
-        "live_football_v5",
+    id:
+      "live_football_v5",
 
-      name:
-        "🔴 LIVE Football ⚽"
-    }
-  ],
+    name:
+      "🔴 LIVE Football ⚽",
+
+    extraSupported:
+      []
+  }
+],
 
   idPrefixes: [
     "live:"
