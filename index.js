@@ -832,8 +832,7 @@ const manifest = {
       "🔴 LIVE Football ⚽"
   }
 ],
-    }
-  ],
+  
 
   idPrefixes: [
     "live:"
