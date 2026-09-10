@@ -1067,6 +1067,57 @@ app.get(
   }
 );
 
+/* =========================================================
+   DEBUG FILTRO
+========================================================= */
+
+app.get(
+  "/debug/filter",
+  async (req, res) => {
+
+    try {
+
+      const all =
+        await getProviderEvents();
+
+
+      res.json({
+
+        totale:
+          all.length,
+
+        passati:
+          all
+            .filter(
+              e => wantedEvent(e.name)
+            )
+            .map(
+              e => e.name
+            ),
+
+        scartati:
+          all
+            .filter(
+              e => !wantedEvent(e.name)
+            )
+            .map(
+              e => e.name
+            )
+      });
+
+
+    } catch (error) {
+
+      res.status(500).json({
+        error:
+          String(error)
+      });
+
+    }
+
+  }
+);
+
 
 /* =========================================================
    ROOT
