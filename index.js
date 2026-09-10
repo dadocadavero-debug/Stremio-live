@@ -1102,7 +1102,7 @@ app.get(
             )
             .map(
               e => e.name
-            )
+            ), 
 
         riconosciutiComeIndesiderati:
   all
