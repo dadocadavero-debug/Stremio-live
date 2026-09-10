@@ -42,10 +42,13 @@ function unwanted(name = "") {
 
   return (
     /\b(women|woman|female|femminile|femminili|femenino|feminino|ladies)\b/.test(n) ||
-    /\bu(?:15|16|17|18|19|20|21|22|23)\b/.test(n) ||
-    /\b(youth|giovanili|primavera|reserve|reserves)\b/.test(n) ||
+
+    /\b(u\s?-?\s?(15|16|17|18|19|20|21|22|23)|under\s?(15|16|17|18|19|20|21|22|23))\b/.test(n) ||
+
+    /\b(youth|giovanili|primavera|reserve|reserves|academy)\b/.test(n) ||
+
     /\b(b team|team b)\b/.test(n)
-  );
+);
 }
 
 
