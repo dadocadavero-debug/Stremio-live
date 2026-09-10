@@ -281,42 +281,58 @@ async function getProviderEvents() {
 
 
       for (
-        const meta of
-        result.value.metas || []
-      ) {
+  const meta of
+  result.value.metas || []
+) {
 
-        if (!meta?.id) {
-          continue;
-        }
+  if (!meta?.id) {
+    continue;
+  }
 
 
-        events.push({
+  const providerKey =
+    `${source}:${meta.id}`;
 
-          source,
 
-          providerId:
-            String(meta.id),
+  const alreadyExists =
+    events.some(
+      e =>
+        `${e.source}:${e.providerId}` === providerKey
+    );
 
-          name:
-            meta.name ||
-            meta.title ||
-            "",
 
-          poster:
-            meta.poster ||
-            meta.background ||
-            meta.logo ||
-            null,
+  if (alreadyExists) {
+    continue;
+  }
 
-          description:
-            meta.description ||
-            "",
 
-          releaseInfo:
-            meta.releaseInfo ||
-            ""
-        });
-      }
+  events.push({
+
+    source,
+
+    providerId:
+      String(meta.id),
+
+    name:
+      meta.name ||
+      meta.title ||
+      "",
+
+    poster:
+      meta.poster ||
+      meta.background ||
+      meta.logo ||
+      null,
+
+    description:
+      meta.description ||
+      "",
+
+    releaseInfo:
+      meta.releaseInfo ||
+      ""
+  });
+}
     }
   );
 
