@@ -769,7 +769,7 @@ function eventToMeta(event) {
       )}`,
 
     type:
-  "sport",
+      "tv",
 
     name:
       event.name,
@@ -817,32 +817,21 @@ const manifest = {
   ],
 
   types: [
-  "sport"
-],
+    "tv"
+  ],
 
   catalogs: [
-  {
-    type:
-      "sport",
+    {
+      type:
+        "tv",
 
-    id:
-      "live_football_v5",
+      id:
+        "live_football_v5",
 
-    name:
-      "🔴 LIVE Football ⚽",
-
-    extra: [
-      {
-        name:
-          "skip"
-      }
-    ],
-
-    showInHome:
-      true
-  }
-],
-  
+      name:
+        "🔴 LIVE Football ⚽"
+    }
+  ],
 
   idPrefixes: [
     "live:"
@@ -868,7 +857,7 @@ app.get(
 ========================================================= */
 
 app.get(
-  "/catalog/sport/live_football_v5.json", 
+  "/catalog/tv/live_football_v5.json",
   async (req, res) => {
 
     try {
@@ -947,7 +936,7 @@ async function findEvent(id) {
 ========================================================= */
 
 app.get(
-  "/meta/sport/:id.json", 
+  "/meta/tv/:id.json",
   async (req, res) => {
 
     try {
@@ -1055,7 +1044,7 @@ async function getStreams(
 ========================================================= */
 
 app.get(
-  "/stream/sport/:id.json", 
+  "/stream/tv/:id.json",
   async (req, res) => {
 
     try {
