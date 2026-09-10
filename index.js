@@ -829,7 +829,17 @@ const manifest = {
       "live_football_v5",
 
     name:
-      "🔴 LIVE Football ⚽"
+      "🔴 LIVE Football ⚽",
+
+    extra: [
+      {
+        name:
+          "skip"
+      }
+    ],
+
+    showInHome:
+      true
   }
 ],
   
