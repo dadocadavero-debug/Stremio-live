@@ -578,8 +578,18 @@ function getInterestingTeams(name = "") {
 
 function eventKey(name = "") {
 
-  return getInterestingTeams(name)
+  const teams = getInterestingTeams(name);
+
+  if (!teams.length) {
+    return "";
+  }
+
+  return teams
+    .map(t => normalize(t))
+    .sort()
     .join("|");
+
+}
 
 }
 
