@@ -1160,16 +1160,19 @@ app.get(
           events.length,
 
         events:
-          events.map(
-            event => ({
+  events.map(
+    event => ({
 
-              name:
-                event.name,
+      name:
+        event.name,
 
-              providers:
-                event.providers
-            })
-          )
+      key:
+        event.key,
+
+      providers:
+        event.providers
+    })
+  )
       });
 
 
