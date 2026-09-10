@@ -937,7 +937,7 @@ async function findEvent(id) {
 ========================================================= */
 
 app.get(
-  "/meta/sport/:id.json"
+  "/meta/sport/:id.json", 
   async (req, res) => {
 
     try {
